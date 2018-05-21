@@ -6,32 +6,27 @@ from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml.regression import DecisionTreeRegressor
-#import tempfile
 
-if __name__ == "__main__":
-    sc = SparkContext.getOrCreate()
-    spark = SparkSession(sc)
-#    temp_path=tempfile.mkdtemp()
+
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)
+
     
-    
-    # Load training data
-    df = spark.read.format("libsvm")\
+# Load training data
+df = spark.read.format("libsvm")\
         .load("C:/Users/Lenovo/spark-master/data/mllib/sample_linear_regression_data.txt")
     
-    #Config Dictionary
-    glm_params = {"maxIter" : 50, "regParam" : 0.1, "elasticNetParam":0.5}
-    dtree_params = { }
-    config={"params" : glm_params,
-            "crossval" : {"crossval" : False, "N" : 5, "metricName" : "r2"}
+#Config Dictionary
+glm_params  = {"maxIter" : 50, "regParam" : 0.1, "elasticNetParam":0.5}
+config      ={"params" : glm_params,
+              "crossval" : {"crossval" : False, "N" : 5, "metricName" : "r2"}
             }
+#Splitting data into training and test
+training, test = df.randomSplit([0.6, 0.4], seed=11)
+training.cache()
     
-    #Splitting data into training and test
-    training, test = df.randomSplit([0.6, 0.4], seed=11)
-    training.cache()
-    
-    
-    #Making Linear Regression Model using training data
-    def linear_reg(df, conf):
+#Making Linear Regression Model using training data
+def linear_reg(df, conf):
         """ input : df [spark.dataframe], conf [configuration params]
             output : linear_regression model [model]
         """
@@ -41,7 +36,7 @@ if __name__ == "__main__":
         
         lr = LinearRegression(maxIter=max_iter, regParam=reg_param, elasticNetParam=elasticnet_param)
         
-        #Cross Validation
+#Cross Validation
         if conf["crossval"].get("crossval") == True:
             grid = ParamGridBuilder().build()
             evaluator = RegressionEvaluator(metricName="r2")
@@ -53,22 +48,24 @@ if __name__ == "__main__":
             lrModel = lr.fit(training)
             
         return lrModel
+
+#output model    
+model = linear_reg(training, config)
     
-    model = linear_reg(training, config)
-    
-    #Making Prediction using test data
-    def predict(test, model):
+#Making Prediction using test data
+def predict(test, model):
         """ input   : df [spark.dataframe], linear_regression model [model]
             output  : prediction
         """    
         val = model.transform(test)
         prediction = val.select("label","prediction")
         return prediction
+   
+#predict test data
+testing = predict(test, model)
     
-    testing = predict(test, model)
-    
-#    Showing R-square using test data
-    def r_square(col_prediction, col_label):
+#Showing R-square using test data
+def r_square(col_prediction, col_label):
         """ input : df [spark.dataframe]
             output : R squared on test data [float]
         """    
@@ -77,11 +74,11 @@ if __name__ == "__main__":
         r2 =  lr_evaluator.evaluate(testing)
         return r2
     
+#output R-square    
+rsq = r_square("prediction","label")
     
-    rsq = r_square("prediction","label")
-    
-#    Showing selected row
-    def row_slicing(df, n):
+#Showing selected row
+def row_slicing(df, n):
         num_of_data = df.count()
         ls = df.take(num_of_data)
         return ls[n]
