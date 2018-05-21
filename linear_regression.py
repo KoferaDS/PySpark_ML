@@ -54,20 +54,7 @@ if __name__ == "__main__":
             
         return lrModel
     
-    #Decision Tree Regression
-#    def dtree_reg(df,conf):
-    
     model = linear_reg(training, config)
-    
-#    def savemodel(df, path):
-#        model_path = temp_path + "/lr"
-#        lr.save(model_path)
-    
-#    saved_model=savemodel(training, lr)    
-    
-#    def loadmodel(df,model):
-#        load_model = LinearRegressionModel.load(saved_model)
-#        return load_model
     
     #Making Prediction using test data
     def predict(test, model):
@@ -98,5 +85,3 @@ if __name__ == "__main__":
         num_of_data = df.count()
         ls = df.take(num_of_data)
         return ls[n]
-
-spark.stop()
