@@ -10,7 +10,7 @@ spark = SparkSession(sc)
  
    
 #Making Linear Regression Model using training data
-def linear_reg(df, conf):
+def linear_reg(train_df, conf):
         """ input : df [spark.dataframe], conf [configuration params]
             output : linear_regression model [model]
         """
@@ -26,20 +26,20 @@ def linear_reg(df, conf):
             evaluator = RegressionEvaluator(metricName="r2")
             cv = CrossValidator(estimator=lr, estimatorParamMaps=grid, evaluator=evaluator, 
                         parallelism=2)
-            lrModel = cv.fit(training)
+            lrModel = cv.fit(train_df)
             
         if conf["crossval"].get("crossval") == False:
-            lrModel = lr.fit(training)
+            lrModel = lr.fit(train_df)
             
         return lrModel
  
     
 #Making Prediction using test data
-def predict(df_test, model):
+def predict(test_df, model):
         """ input   : df [spark.dataframe], linear_regression model [model]
             output  : prediction [dataframe]
         """    
-        val = model.transform(test)
+        val = model.transform(test_df)
         prediction = val.select("label","prediction")
         return prediction
     
