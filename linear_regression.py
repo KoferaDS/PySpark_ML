@@ -44,7 +44,7 @@ def predict(df_test, model):
         return prediction
     
     
-#    Showing R-square using test data
+#Showing R-square using test data
 def r_square(df, col_prediction, col_label):
         """ input : df [spark.dataframe]
             output : R squared on test data [float]
