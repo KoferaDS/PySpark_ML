@@ -16,6 +16,7 @@ This Repository is used temporary for developing functionality of ML Algorithms.
 
 * Clustering Task :
 >> K-Means Clustering
+>> Gaussian Mixture
 
 ## _Built With_
 
@@ -24,4 +25,5 @@ This Repository is used temporary for developing functionality of ML Algorithms.
 ## _Authors_
 
 * **Markus Paramahasti** - *Initial work* -
+* **Mujirin** -*Inital work* -
 
