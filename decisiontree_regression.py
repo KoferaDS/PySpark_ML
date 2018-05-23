@@ -7,6 +7,7 @@ from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml import Pipeline
 from pyspark.ml.regression import DecisionTreeRegressor
+from pyspark.ml.regression import DecisionTreeModel
 from pyspark.ml.feature import VectorIndexer
 from pyspark.ml.tuning import (CrossValidator, ParamGridBuilder)
 from pyspark.ml.evaluation import RegressionEvaluator
@@ -39,6 +40,16 @@ def dtree_reg(train_df, conf):
        
     return dtModel
 
+#Save Model
+def saveModel(model, path):
+    model.save(path)
+    return
+
+#Load Model
+def loadModel(path):
+    model = DecisionTreeModel.load(path)
+    return model
+
 
 #Predict test data using trained-model
 def predict(test_df, model):
@@ -48,7 +59,6 @@ def predict(test_df, model):
     val = model.transform(test_df)
     prediction = val.select("label","prediction")
     return prediction
-
 
 
 #R-square function
@@ -62,6 +72,20 @@ def r_square(df, col_prediction, col_label):
     r2 = [(Vectors.dense(r2),)]
     r2_df = spark.createDataFrame(r2, ["R-square"])
     return r2_df
+
+
+#Showing RMSE using test data
+def rmse(df, col_prediction, col_label):
+        """ input : df [spark.dataframe]
+            output : RMS on test data [float]
+        """    
+        lr_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
+                 labelCol=col_label, metricName="rmse")
+        rmse =  lr_evaluator.evaluate(df)
+        rmse = [(Vectors.dense(rmse),)]
+        rmse_df = spark.createDataFrame(rmse, ["RMS"])
+        return rmse_df
+
     
 #Showing selected row
 def row_slicing(df, n):
@@ -82,7 +106,6 @@ featureIndexer =\
 
 # Split the data into training and test sets (30% held out for testing)
 (train_df, test_df) = df.randomSplit([0.7, 0.3])
-train_df.cache()
 
 
 #Parameter Configuration 
@@ -102,3 +125,6 @@ testing = predict (test_df, model)
 
 #getting R-square
 rsq = r_square(testing, "prediction", "label")
+
+#getting RMS
+rms = rmse(testing, "prediction", "label")
