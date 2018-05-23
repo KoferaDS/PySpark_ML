@@ -5,70 +5,74 @@ from pyspark.ml.regression import IsotonicRegression
 #from pyspark.ml.regression import IsotonicRegressionModel
 from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
-#from pyspark.mllib.util import MLUtils
+from pyspark.ml.linalg import Vectors
 
-if __name__ == "__main__":
-    sc = SparkContext.getOrCreate()
-    spark = SparkSession(sc)
-    
-# Loads dataframe and define configuration
-    df = spark.read.format("libsvm")\
-        .load("C:/Users/User/Desktop/spark-master/data/mllib/sample_isotonic_regression_libsvm_data.txt")
-        config = {"crossval" : {"crossval" : True, "N" : 10, "metricName" : "r2",}}
-   
-# Splitting between data training and test
-    training, test = df.randomSplit([0.6, 0.4], seed=11)
-    training.cache()
-    
-# Trains an isotonic regression model. 
-    def Isoton_Regression (df,conf):
-        """input :  df [spark.dataframe], config[configuration (Params and use cross validator/not)
-           output : Isotonic Regression Model"""
-                   
-        ir = IsotonicRegression()
-        
-# Configure whether use cross validator/not
-        if conf["crossval"].get("crossval") == True:
-            grid = ParamGridBuilder().build()
-            evaluator = RegressionEvaluator(metricName="r2")
-            cv = CrossValidator(estimator=ir, estimatorParamMaps=grid, evaluator=evaluator, 
-                        parallelism=2) 
-            irmodel= cv.fit(training)
-        if conf["crossval"].get("crossval") == False:
-            
-            irmodel= ir.fit (training)
-            
-        return irmodel
-    
-# Define Isotonic Regression Model        
-    ir_model = Isoton_Regression(training,config)
-          
-# Making prediction using test data  
-    def predict (test,model):
-        val = ir_model.transform(test)
-        val.show()
-        return val
-        
-    testing = predict(test,ir_model)
-    
-# Showing R-square using test data
-    def r_square(col_prediction, col_label):
-        """ input : df [spark.dataframe]
-            output : R squared on test data [float]
-        """    
-        ir_evaluator = RegressionEvaluator(predictionCol=col_prediction,
-                                           labelCol=col_label, metricName="r2")
-        r2 =  ir_evaluator.evaluate(testing)
-        return r2
-    
-    
-    rsq = r_square("prediction","label")
-    print()
-    
-# Showing selected row
-    def row_slicing(df, n):
-        num_of_data = df.count()
-        ls = df.take(num_of_data)
-        return ls[n]
+sc = SparkContext.getOrCreate()
+spark = SparkSession(sc)  
  
-    spark.stop()
+def train_IR (df,conf):
+    """input  : - Dataframe train (df)
+                - Hyperparameter configuration (conf)
+       output : - Isotonic Regression model (model)
+    """     
+    ir        = IsotonicRegression()     
+   
+    # Configure whether use cross validator/not
+    if conf["crossval"].get("crossval") == True:
+       grid      = ParamGridBuilder().build()
+       evaluator = RegressionEvaluator(metricName="r2")
+       cv     = CrossValidator(estimator=ir, estimatorParamMaps=grid, evaluator=evaluator, 
+                    parallelism=2) 
+       model  = cv.fit(df)
+    if conf["crossval"].get("crossval") == False:
+       model  = ir.fit(df)
+    return model
+   
+def predict (df, model):
+    """ input  : -Dataframe test(df)
+                 -Isotonic Regression model (model)
+        output : -Dataframe with features and prediction column
+    """      
+    transformed = model.transform(df).select("label","prediction")
+    df_predict  = transformed.show()
+    return df_predict
+        
+def root_square(df,prediction, label):
+    """ input  : -Dataframe (df)
+        output : -Dataframe of Root squared
+    """    
+    evaluator = RegressionEvaluator(predictionCol="prediction", labelCol = "label", metricName="r2")
+    r2        = evaluator.evaluate(df)
+    r2        = [(Vectors.dense(df),)]
+    df_r2     = spark.createDataFrame(r2, ["root mean square"])
+    df_r2.show()
+    return df_r2
+
+def row_slicing(df, n):
+    """ input  : -Dataframe (df)
+        output : -Dataframe of n selected row
+    """     
+    num_of_data = df.count()
+    rs          = df.take(num_of_data)
+    return rs[n]
+
+# ------------------------------Test and examples--------------------------------
+
+    # Loads dataframe
+df_isoton = spark.read.format("libsvm")\
+            .load("D:\Kofera\spark-master\data\mllib\sample_isotonic_regression_libsvm_data.txt")    
+    # Define configuration
+config    = {
+                "crossval" : {"crossval" : True, "N" : 10, "metricName" : "r2"},
+                "predictionCol" : "prediction"
+                }
+   
+    # Splitting dataframe into dataframe training and test
+df_training, df_test = df_isoton.randomSplit([0.6, 0.4], seed=11)
+df_training.cache()
+
+    # Applied methods to Input data 
+trained_model = train_IR(df_training,config)
+prediction    = predict(df_test,trained_model)
+r_square      = root_square(prediction, "prediction", "label")       
+#row_sliced    = row_slicing(df_test,10)
