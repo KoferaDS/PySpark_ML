@@ -110,7 +110,13 @@ featureIndexer =\
 
 #Parameter Configuration 
 config       =  {
-                 "params" : {"maxDepth" : 2, "featuresCol":"features"},
+                 "params" : {"maxDepth" : 2, "featuresCol":"features", "labelCol":"label", 
+                             "predictionCol" : "prediction", "maxBins" : 32,
+                             "minInstancesPerNode" : 1, "minInfoGain" : 0.0,
+                             "maxMemoryInMB" : 256, "chacheNodeIds" : False,
+                             "checkpointInterval" : 10, "impurity" : "variance",
+                             "seed" : None, "varianceCol" : None
+                             },
                  "crossval" : {"crossval" : False, "N" : 5, "metricName" : "r2"}
                  }
 
