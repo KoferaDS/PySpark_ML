@@ -111,10 +111,10 @@ trained_model = train_IR(df_training,config)
 # Prediction
 testing = predict(df_test,trained_model)
 # Select n-row to display
-row_sliced    = testing.show(5)
+row_sliced = testing.show(5)
 # Root square
-r2      = Rsquare(testing, "prediction", "label")  
+r2 = Rsquare(testing, "prediction", "label")  
 r2.show() 
 # Root mean square
-rmse    = Rmse(testing,"prediction", "label")  
+rmse = Rmse(testing,"prediction", "label")  
 rmse.show()
