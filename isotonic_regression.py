@@ -94,7 +94,11 @@ df_training.cache()
 #     Define params and config      
 ir_params = {
                 "predictionCol" : "prediction",
-                "labelCol" : "label"
+                "labelCol" : "label",
+                "featuresCol" : "features",
+                "WeightCol" : None,
+                "isotonic" : True,
+                "featureIndex" : 0
             }            
 config    = {
                 "params" : ir_params,
