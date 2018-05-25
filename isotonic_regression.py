@@ -110,7 +110,7 @@ config    = {
 trained_model = train_IR(df_training,config)
 # Prediction
 testing = predict(df_test,trained_model)
-# Select row to display
+# Select n-row to display
 row_sliced    = testing.show(5)
 # Root square
 r2      = Rsquare(testing, "prediction", "label")  
