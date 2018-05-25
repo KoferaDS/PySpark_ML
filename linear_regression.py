@@ -96,7 +96,13 @@ training.cache()
     
 #Config Dictionary
 config      = {
-               "params" : {"maxIter" : 10, "regParam" : 0.3, "elasticNetParam": 0.8},
+               "params" : {"maxIter" : 10, "regParam" : 0.3, "elasticNetParam": 0.8,
+                           "featuresCol":"features", "labelCol":"label", 
+                            "predictionCol":"prediction", "tol": 1e-06, 
+                            "fitIntercept":True, "standardization":True, 
+                            "solver":"auto", "weightCol":None, "aggregationDepth":2, 
+                            "loss":"squaredError", "epsilon":1.35 
+                           },
                "crossval" : {"crossval" : False, "N" : 10, "metricName" : "r2"}
                }   
 
