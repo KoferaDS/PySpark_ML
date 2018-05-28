@@ -23,6 +23,16 @@ def dtree_reg(train_df, conf):
     """
     maxDepth    = conf["params"].get("maxDepth")
     featuresCol = conf["params"].get("featuresCol")
+    maxBin = conf["params"].get("maxBins")
+    seed = conf["params"].get("seed")
+    minInstancesPerNode = conf["params"].get("minInstancesPerNode")
+    minInfoGain = conf ["params"].get("minInfoGain")
+    maxMemoryInMB = conf["params"].get("maxMemoryInMB")
+    cacheNodeIds = conf["params"].get("cacheNodeIds")
+    checkpointInterval = conf["params"].get("checkpointInterval")
+    impurity = conf["params"].get("impurity")
+    seed = conf["params"].get("seed")
+    varianceCol = conf["params"].get("varianceCol")   
     
     dt = DecisionTreeRegressor(maxDepth=maxDepth,featuresCol=featuresCol)
     pipeline = Pipeline(stages=[featureIndexer, dt])
@@ -43,7 +53,6 @@ def dtree_reg(train_df, conf):
 #Save Model
 def saveModel(model, path):
     model.save(path)
-    return
 
 #Load Model
 def loadModel(path):
