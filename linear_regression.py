@@ -18,6 +18,17 @@ def linear_reg(train_df, conf):
         max_iter = conf["params"].get("maxIter")
         reg_param = conf["params"].get("regParam")
         elasticnet_param = conf["params"].get("elasticNetParam")
+        featuresCol= conf["params"].get("featuresCol")
+        labelCol= conf["params"].get("labelCol")
+        predictionCol = conf["params"].get("predictionCol")
+        tol = conf["params"].get("tol")
+        fitIntercept = conf["params"].get("fitIntercept")
+        standardization = conf["params"].get("standardization")
+        solver = conf["params"].get("solver")
+        weightCol = conf["params"].get("weightCol")
+        aggregationDepth = conf["params"].get("aggregationDepth")
+        loss = conf["params"].get("loss")
+        epsilon =  conf["params"].get("epsilon")
         
         lr = LinearRegression(maxIter=max_iter, regParam=reg_param, elasticNetParam=elasticnet_param)
         
