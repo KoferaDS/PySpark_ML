@@ -64,7 +64,7 @@ conf2 = {
 
 
 
-def logistic_classifier(df, conf):
+def logisticClassifier(df, conf):
   feature_col = conf["params"].get("featuresCol", "features")
   label_col = conf["params"].get("labelCol", "label")
   pred_col = conf["params"].get("predictionCol", "prediction")
@@ -140,7 +140,7 @@ if __name__ == "__main__":
      ["features", "label"])
   
   
-  logistic_model = logistic_classifier(data, conf2)
+  logistic_model = logisticClassifier(data, conf2)
   #print ("model coefficients : ", logistic_model.coefficients)
   #print ("model intercept : ", logistic_model.intercept)
   
