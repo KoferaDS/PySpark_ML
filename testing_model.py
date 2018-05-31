@@ -30,25 +30,33 @@ spark = SparkSession(sc)
 
 
 
-logistic_params = { "maxIter" : 5, "regParam" : 0.01, "elasticNetParam" : 1.0, 
-                      "weightCol" : "weight"
+logistic_params = { 
+                    "maxIter" : 5, 
+                    "regParam" : 0.01, 
+                    "elasticNetParam" : 1.0, 
+                    "weightCol" : "weight"
                     }
 
 
-grid = {"numFeatures" : [10, 100, 1000], "regParam" : [0.1, 0.01]}
+grid = { 
+          "numFeatures" : [10, 100, 1000], 
+          "regParam" : [0.1, 0.01]
+       }
 
 
 tune_params = { 
                  "method" : "crossval", 
                  "paramGrids" : grid, 
-                 "folds" : 5  
+                 "methodParam" : 5  
                 }
 
+#without hyperparameter tuning
 conf = {   
           "params" : logistic_params,
           "tuning" : None
         }
 
+#example model using hyperparameter tuning
 conf2 = {   
           "params" : logistic_params,
           "tuning" : tune_params
@@ -79,39 +87,33 @@ def logistic_classifier(df, conf):
   lr = LogisticRegression(maxIter=max_iter, regParam=reg_param, elasticNetParam=elasticNet_param, \
           tol=tolr, fitIntercept=fit_intercept, threshold=thres, standardization=std, \
             aggregationDepth=aggr, family=fml, weightCol=weight)
-  
-  print ("maxIter : " , lr.getMaxIter())
-  print ("regParam : " , lr.getRegParam())
-  print ("aggrDepth : " , lr.getAggregationDepth())
-  print ("family : ", lr.getFamily())
-  
+    
   if conf["tuning"]:
     if conf["tuning"].get("method").lower() == "crossval":
       logReg = LogisticRegression()
       paramgGrids = conf["tuning"].get("paramGrids")
+      folds = conf["tuning"].get("methodParam", 2)
       pg = ParamGridBuilder()
       for key in paramgGrids:
         pg.addGrid(key, paramgGrids[key])
       
       grid = pg.build()
-      #grid = ParamGridBuilder().addGrid(lr.maxIter, [0, 1]).build()
       evaluator = BinaryClassificationEvaluator()
-      cv = CrossValidator(estimator=logReg, estimatorParamMaps=grid, evaluator=evaluator)
+      cv = CrossValidator(estimator=logReg, estimatorParamMaps=grid, evaluator=evaluator, numFolds=folds)
       model = cv.fit(df)
     elif conf["tuning"].get("method").lower() == "trainvalsplit":
       paramgGrids = conf["tuning"].get("paramGrids")
+      tr = conf["tuning"].get("methodParam", 0.8)
       pg = ParamGridBuilder()
       for key in paramgGrids:
         pg.addGrid(key, paramgGrids[key])
       
       grid = pg.build()
       evaluator = BinaryClassificationEvaluator()
-      tvs = TrainValidationSplit(estimator=lr, estimatorParamMaps=grid, evaluator=evaluator)
+      tvs = TrainValidationSplit(estimator=lr, estimatorParamMaps=grid, evaluator=evaluator, trainRatio=tr)
       model = tvs.fit(df)
 
   elif conf["tuning"] == None:
-    print ("test")
-    #mlr = LogisticRegression(regParam=reg_param, weightCol=weight)
     model = lr.fit(df)
   return model
 
@@ -149,6 +151,6 @@ if __name__ == "__main__":
   #print ("model predict : \n --> ", predict(test1, logistic_model))
   
   
-  
+  # sc.stop()
   
   # exec(open("/home/markus/Music/testing_model.py").read())
