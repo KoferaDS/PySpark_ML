@@ -1,120 +1,167 @@
 from __future__ import print_function
 from pyspark.ml.evaluation import RegressionEvaluator
-from pyspark.ml.tuning import CrossValidator,ParamGridBuilder
+from pyspark.ml.tuning import CrossValidator,ParamGridBuilder, TrainValidationSplit
 from pyspark.ml.regression import IsotonicRegression
 from pyspark.ml.regression import IsotonicRegressionModel
 from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.ml.linalg import Vectors
+from pyspark.sql import Row
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)  
- 
-    
-def train_IR (df,conf):
-    """input  : - Dataframe train (df)
-                - Hyperparameter configuration (conf)
-       output : - Isotonic Regression model (model)
-    """     
-    ir        = IsotonicRegression() 
-   
-    # Configure whether use cross validator/not
-    if conf["crossval"].get("crossval") == True:
-       grid      = ParamGridBuilder().build()
-       evaluator = RegressionEvaluator(metricName="r2")
-       cv     = CrossValidator(estimator=ir, estimatorParamMaps=grid, evaluator=evaluator, 
-                    parallelism=2) 
-       model  = cv.fit(df)
-    if conf["crossval"].get("crossval") == False:
-       model  = ir.fit(df)
-    return model
+
+#    Define default parameter in Isotonic Regression
+isotonic_params = {
+                    "predictionCol" : "prediction",
+                    "labelCol" : "label",
+                    "featuresCol" : "features",
+                    "weightCol" : "weight",
+                    "isotonic" : True,
+                    "featureIndex" : 0
+                  }            
+#    Define params tuning whether use "crossval" or "trainvalsplit" to train data
+tune_params = {
+                "method" : "trainvalsplit",
+                "methodParams" : 5
+              }
+#    Define configuration whether use tuning/non-tuning
+conf1   =  {
+                "params" : isotonic_params,
+                "tuning" : None
+            }
+
+conf2  =   {
+                "params" : isotonic_params,
+                "tuning" : tune_params
+           }
+
+def isotonicRegression(df, conf):
+  """ Isotonic Regression training
+        Input  : - Dataframe of training (df)
+                 - Tuning and hiperparameter configuration (conf)
+        output : - Isotonic regression model (model)
+  """
+  isoton = conf["params"].get("isotonic",True)
+  feature_index = conf["params"].get("featureIndex",0)
+      
+  ir = IsotonicRegression(isotonic=isoton, featureIndex=feature_index)
+
+  if conf["tuning"]:
+    if conf["tuning"].get("method").lower() == "crossval":
+      folds = conf["tuning"].get("methodParam", 2)
+      pg = ParamGridBuilder().build()
+      evaluator = RegressionEvaluator(metricName = "r2")
+      cv = CrossValidator(estimator=ir, estimatorParamMaps=pg,
+                          evaluator=evaluator, numFolds=folds)
+      model = cv.fit(df)
+    elif conf["tuning"].get("method").lower() == "trainvalsplit":
+      tr = conf["tuning"].get("methodParam", 0.8)
+      pg = ParamGridBuilder().build()
+      evaluator = RegressionEvaluator()
+      tvs = TrainValidationSplit(estimator=ir, estimatorParamMaps=pg,
+                                 evaluator=evaluator, trainRatio=tr)
+      model = tvs.fit(df)
+  elif conf["tuning"] ==  None:
+    model = ir.fit(df)
+  return model
 
 def saveModel(model,path):
     '''Save model into corresponding path.
-       Input  : -model
-                -path
-       Output : -saved model
+       Input  : - Model
+                - Path
+       Output : - Saved model
     '''
     model.save(path)
     return
 
-def loadModel(path):
+def loadIsotonicRegressor(path):
     '''Loading model from path.
-       Input  : -Path
-       Output : -Loaded model
+       Input  : - Path
+       Output : - Loaded model
     '''
     model = IsotonicRegressionModel.load(path)
     return model
 
 
 def predict (df, model):
-    """Associated with the boundaries at the same index, monotone because of isotonic regression. 
+    """ Prediction value by the trained model
         Input  : -Dataframe test(df)
                  -Trained model (model)
-        Output : -Dataframe with label, features, and prediction column
+        Output : -Dataframe with prediction column (transformed)
     """      
-    transformed = model.transform(df).select("label","features","prediction")
+    transformed = model.transform(df).select("label","prediction")
     return transformed
+    
+def prediction (df,model):
+    """ show dataframe of prediction in kernel
+         Input  : -Dataframe test(df)
+                  -Trained model (model)
+        Output :  -Dataframe display with prediction column (transformed)
+    """
+    model.transform(df).show()
 
-def Rsquare(df, prediction, label):
-    """ input  : -Dataframe prediction (df)
-        output : -Dataframe of Root squared (df)
+def summary_R2 (df,prediction,label):
+    """ 
+        input  : -Dataframe prediction (df)
+        output : -Dataframe of R^2 and Rms (df)
     """    
-    ir_evaluator = RegressionEvaluator(predictionCol="prediction", 
+    evaluator = RegressionEvaluator(predictionCol="prediction", 
                                        labelCol = "label", metricName="r2")
-    r2        = ir_evaluator.evaluate(df)
-    vr2       = [(Vectors.dense(r2),)]
-    df_r2     = spark.createDataFrame(vr2, ["R^2"])
-    return df_r2
+    R2      = evaluator.evaluate(df)
+    v_R2    = [(Vectors.dense(R2),)]
+    df_R2   = spark.createDataFrame(v_R2, ["R^2"])  
+    return df_R2
 
-def Rmse(df, prediction, label):
-    """ input  : -Dataframe prediction (df)
-        output : -Dataframe of Root squared
+def summary_Rmse (df,prediction,label):
+    """ 
+        input  : -Dataframe prediction (df)
+        output : -Dataframe of R^2 and Rms (df)
     """    
-    ir_evaluator = RegressionEvaluator(labelCol = "label",predictionCol="prediction", 
-                                       metricName="rmse")
-    rmse      = ir_evaluator.evaluate(df)
-    vrmse     = [(Vectors.dense(rmse),)]
-    df_rmse   = spark.createDataFrame(vrmse, ["Rms"])
-    return df_rmse
+    evaluator = RegressionEvaluator(predictionCol="prediction", 
+                                       labelCol = "label", metricName="rmse")
+    Rmse     = evaluator.evaluate(df)
+    v_Rmse   = [(Vectors.dense(Rmse),)]
+    df_Rmse  = spark.createDataFrame(v_Rmse, ["Rmse"])  
+    return df_Rmse
 
 def copyModel(model):
     copy_model = model.copy(extra=None)
     return copy_model
+
 # ------------------------------Test and examples--------------------------------
 
 #     Loads dataframe
+if __name__ == "__main__":
+  
+  data = sc.parallelize([
+     Row(label=1.0, weight=1.0, features=Vectors.dense(0.0, 5.0)),
+     Row(label=0.0, weight=2.0, features=Vectors.dense(1.0, 2.0)),
+     Row(label=1.0, weight=3.0, features=Vectors.dense(2.0, 1.0)),
+     Row(label=0.0, weight=4.0, features=Vectors.dense(3.0, 3.0))]).toDF()
+  
+  data2 = spark.createDataFrame([(Vectors.dense([0.0]), 0.0),
+      (Vectors.dense([0.4]), 1.0), (Vectors.dense([0.5]), 0.0),
+      (Vectors.dense([0.6]), 1.0), (Vectors.dense([1.0]), 1.0)] * 10,
+     ["features", "label"])
+  
 df_isoton = spark.read.format("libsvm")\
             .load("D:\Kofera\spark-master\data\mllib\sample_isotonic_regression_libsvm_data.txt")    
     
-    # Splitting dataframe into dataframe training and test
+    # Splitting dataframe into dataframe training and test 
+    # (if not use any of tuning params)
 df_training, df_test = df_isoton.randomSplit([0.6, 0.4], seed=11)
 df_training.cache()
-
-#     Define params and config      
-ir_params = {
-                "predictionCol" : "prediction",
-                "labelCol" : "label",
-                "featuresCol" : "features",
-                "WeightCol" : None,
-                "isotonic" : True,
-                "featureIndex" : 0
-            }            
-config    = {
-                "params" : ir_params,
-                "crossval" : {"crossval" : False, "N" : 5, "metricName" : "r2"},
-            }
    
     # Applied methods to Data
 # IR Model
-trained_model = train_IR(df_training,config)
+trained_model = isotonicRegression(df_isoton,conf2)
 # Prediction
-testing = predict(df_test,trained_model)
-# Select n-row to display
-row_sliced = testing.show(5)
+testing = predict(df_isoton,trained_model)
+testing.show()
 # Root square
-r2 = Rsquare(testing, "prediction", "label")  
+r2      = summary_R2(testing, "prediction", "label")  
 r2.show() 
 # Root mean square
-rmse = Rmse(testing,"prediction", "label")  
+rmse    = summary_Rmse(testing,"prediction", "label")  
 rmse.show()
