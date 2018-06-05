@@ -6,6 +6,7 @@ from pyspark.ml.regression import LinearRegression
 from pyspark.ml.regression import LinearRegressionModel
 
 from pyspark.ml.tuning import (CrossValidator, TrainValidationSplit, ParamGridBuilder)
+from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
 from pyspark.ml.evaluation import RegressionEvaluator
 
 
@@ -122,20 +123,22 @@ def linearRegressor(df, conf):
 #menyimpan model
 def saveModel(model, path):
     model.save(path)
+  
 
-#Load Model
-def loadModel(path):
+#Load Model (jika tidak menggunakan ML-tuning = conf1, jika menggunakan ML-tuning = conf2 )
+def loadModel(conf, path):
     
-    tipe = type(model)
+    #Jika menggunakan ML-Tuning
+    if conf["tuning"]:    
+        #Jika menggunakan Cross Validation, maka tipe model = CrossValidatorModel
+        if conf["tuning"].get("method").lower() == "crossval":
+            loading_model = CrossValidatorModel.load(path)        
+        #Jika menggunakan Train Validation, maka tipe model = TrainValidationSplitModel   
+        elif conf["tuning"].get("method").lower() == "trainvalsplit":
+            loading_model = TrainValidationSplitModel.load(path)
     
-    #Jika menggunakan ML-Tuning Cross Validation, maka tipe model = CrossValidatorModel
-    if tipe == "pyspark.ml.tuning.CrossValidatorModel" :
-        loading_model = CrossValidatorModel.load(path)        
-    #Jika menggunakan ML-Tuning Train Validation, maka tipe model = TrainValidationSplitModel   
-    elif tipe == "pyspark.ml.tuning.TrainValidationSplitModel":
-        loading_model = TrainValidationSplitModel.load(path)
     #Jika tidak menggunakan ML-tuning, tipe model = LinearRegressionModel    
-    elif tipe == "pyspark.ml.tuning.LinearRegressionModel":
+    elif conf["tuning"] == None:
         loading_model = LinearRegressionModel.load(path)
     
     return loading_model
