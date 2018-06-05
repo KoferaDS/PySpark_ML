@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Thu May 31 10:31:37 2018
 
-@author: Ellen
-"""
 from __future__ import print_function
 from pyspark.ml.linalg import Vectors
 
@@ -12,16 +8,30 @@ from pyspark.ml.feature import StandardScalerModel
 
 from pyspark.sql import SparkSession
 
+#configurations
+    
+spark = SparkSession\
+    .builder\
+    .appName("StandardScalerExample")\
+    .getOrCreate()
+    
+config = {
+            "withMean" : False,
+            "withStd" : True,
+            "inputCol" : "features",
+            "outputCol" : "scaledFeatures"
+        }
+
 #fit data frame into standard model
 def scaleModel(dataFrame,conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
     """
-    mean = conf["params"].get("withMean")
-    std = conf["params"].get("withStd")
-    input = conf["params"].get("inputCol")
-    output = conf["params"].get("outputCol")
+    mean = conf.get("withMean")
+    std = conf.get("withStd")
+    input = conf.get("inputCol")
+    output = conf.get("outputCol")
     scaler = StandardScaler(inputCol = input, outputCol = output, 
                             withMean = mean, withStd = std)
     model = scaler.fit(dataFrame)
@@ -43,10 +53,10 @@ def saveModel(conf, path):
         input: configuration params, path
         output: void
     """
-    mean = conf["params"].get("withMean")
-    std = conf["params"].get("withStd")
-    input = conf["params"].get("inputCol")
-    output = conf["params"].get("outputCol")
+    mean = conf.get("withMean")
+    std = conf.get("withStd")
+    input = conf.get("inputCol")
+    output = conf.get("outputCol")
     scaler = StandardScaler(inputCol = input, outputCol = output, 
                             withMean = mean, withStd = std)
     scaler.save(path)
@@ -92,29 +102,26 @@ def loadData(path):
 
 
 
-#testing
-    
 
-    
-spark = SparkSession\
-    .builder\
-    .appName("StandardScalerExample")\
-    .getOrCreate()
-    
-config = {
-        "params" : {
-                "withMean" : False,
-                "withStd" : True,
-                "inputCol" : "features",
-                "outputCol" : "scaledFeatures"
-                }
-        }
+#--------------------------Testing and Example--------------------------#
+
+if __name__ == "__main__":
+
+    #create data frame        
+    dataFrame = spark.createDataFrame([
+        (0, Vectors.dense([1.0, 0.1, -8.0]),),
+        (1, Vectors.dense([2.0, 1.0, -4.0]),),
+        (2, Vectors.dense([4.0, 10.0, 8.0]),)
+    ], ["id", "features"])
         
-dataFrame = spark.createDataFrame([
-    (0, Vectors.dense([1.0, 0.1, -8.0]),),
-    (1, Vectors.dense([2.0, 1.0, -4.0]),),
-    (2, Vectors.dense([4.0, 10.0, 8.0]),)
-], ["id", "features"])
-    
-model = transformModel(dataFrame, config)
-model.select("features", "scaledFeatures").show()
+    #normalize data frame by using standard normalization
+    model = transformModel(dataFrame, config)
+
+    #showting normalized data
+    model.select("features", "scaledFeatures").show()
+
+    #save data frame into desired path
+    saveData(model, 'standard_norm_example.csv', 'csv')
+
+    #save model into desired path
+    saveModel(config,'standard_norm_model')

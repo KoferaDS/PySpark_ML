@@ -8,14 +8,27 @@ from pyspark.ml.feature import MaxAbsScalerModel
 
 from pyspark.sql import SparkSession
 
+#configurations
+  
+spark = SparkSession\
+    .builder\
+    .appName("MaxAbsScalerExample")\
+    .getOrCreate()
+    
+    
+config = {
+            "inputCol" : "features",
+            "outputCol" : "scaledFeatures"    
+        }
+
 #fit data frame into maximum absolute model
 def scaleModel(dataFrame,conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
     """
-    inp = conf["params"].get("inputCol")
-    output = conf["params"].get("outputCol")
+    inp = conf.get("inputCol")
+    output = conf.get("outputCol")
     scaler = MaxAbsScaler(inputCol = inp, outputCol = output)
     model = scaler.fit(dataFrame)
     return model
@@ -35,8 +48,8 @@ def saveModel(conf, path):
         input: configuration params, path
         output: void
     """
-    inp = conf["params"].get("inputCol")
-    output = conf["params"].get("outputCol")
+    inp = conf.get("inputCol")
+    output = conf.get("outputCol")
     scaler = MaxAbsScaler(inputCol = inp, outputCol = output)
     scaler.save(path)
     return
@@ -81,26 +94,27 @@ def loadData(path):
     
 
 
-#testing
-    
-spark = SparkSession\
-    .builder\
-    .appName("MaxAbsScalerExample")\
-    .getOrCreate()
-    
-dataFrame = spark.createDataFrame([
-    (0, Vectors.dense([1.0, 0.1, -8.0]),),
-    (1, Vectors.dense([2.0, 1.0, -4.0]),),
-    (2, Vectors.dense([4.0, 10.0, 8.0]),)
-], ["id", "features"])
-    
-config = {
-        "params" : {
-            "inputCol" : "features",
-            "outputCol" : "scaledFeatures"
-            }
-        }
-    
-model = transformModel(dataFrame, config)
 
-model.select("features", "scaledFeatures").show()
+
+#--------------------------Testing and Example--------------------------#
+
+if __name__ == "__main__":
+
+    #create data frame        
+    dataFrame = spark.createDataFrame([
+        (0, Vectors.dense([1.0, 0.1, -8.0]),),
+        (1, Vectors.dense([2.0, 1.0, -4.0]),),
+        (2, Vectors.dense([4.0, 10.0, 8.0]),)
+    ], ["id", "features"])
+        
+    #normalize data frame by using min max normalization
+    model = transformModel(dataFrame, config)
+
+    #showting normalized data
+    model.select("features", "scaledFeatures").show()
+
+    #save data frame into desired path
+    saveData(model, 'maxabs_norm_example.csv', 'csv')
+
+    #save model into desired path
+    saveModel(config,'maxabs_norm_model')

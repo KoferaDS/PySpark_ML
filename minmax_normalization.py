@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Wed May 31 15:20:52 2018
 
-@author: Ellen
-"""
 from __future__ import print_function
 from pyspark.ml.linalg import Vectors
 
@@ -12,16 +8,34 @@ from pyspark.ml.feature import MinMaxScalerModel
 
 from pyspark.sql import SparkSession
 
+
+
+#configurations
+
+spark = SparkSession\
+    .builder\
+    .appName("MinMaxScalerExample")\
+    .getOrCreate()
+    
+  
+config = {
+            "min" : 0.0,
+            "max" : 1.0,
+            "withStd" : True,
+            "inputCol" : "features",
+            "outputCol" : "scaledFeatures"
+        }
+
 #fit data frame into minimum maximum model
 def scaleModel(dataFrame, conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
     """
-    input = conf["params"].get("inputCol")
-    output = conf["params"].get("outputCol")
-    minimum = conf["params"].get("min")
-    maximum = conf["params"].get("max")
+    input = conf.get("inputCol")
+    output = conf.get("outputCol")
+    minimum = conf.get("min")
+    maximum = conf.get("max")
     scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
                           outputCol = output)
     model = scaler.fit(dataFrame)
@@ -42,10 +56,10 @@ def saveModel(conf, path):
         input: configuration params for [MinMaxScaler], path
         output: void
     """
-    input = conf["params"].get("inputCol")
-    output = conf["params"].get("outputCol")
-    minimum = conf["params"].get("min")
-    maximum = conf["params"].get("max")
+    input = conf.get("inputCol")
+    output = conf.get("outputCol")
+    minimum = conf.get("min")
+    maximum = conf.get("max")
     scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
                           outputCol = output)
     scaler.save(path)
@@ -91,32 +105,26 @@ def loadData(path):
     return model
     
 
-#testing
 
+#--------------------------Testing and Example--------------------------#
 
-spark = SparkSession\
-    .builder\
-    .appName("MinMaxScalerExample")\
-    .getOrCreate()
-    
-dataFrame = spark.createDataFrame([
-    (0, Vectors.dense([1.0, 0.1, -1.0]),),
-    (1, Vectors.dense([2.0, 1.1, 1.0]),),
-    (2, Vectors.dense([3.0, 10.1, 3.0]),)
-], ["id", "features"])
-  
-config = {
-        "params" : {
-            "min" : 0.0,
-            "max" : 1.0,
-            "withStd" : True,
-            "inputCol" : "features",
-            "outputCol" : "scaledFeatures"
-            }
-        }
-    
-model = transformModel(dataFrame, config)
+if __name__ == "__main__":
 
-model.select("features", "scaledFeatures").show()
-saveData(model, 'tes2.csv', 'csv')
-#saveModel(config,'/tes')
+    #create data frame        
+    dataFrame = spark.createDataFrame([
+        (0, Vectors.dense([1.0, 0.1, -1.0]),),
+        (1, Vectors.dense([2.0, 1.1, 1.0]),),
+        (2, Vectors.dense([3.0, 10.1, 3.0]),)
+    ], ["id", "features"])
+        
+    #normalize data frame by using min max normalization
+    model = transformModel(dataFrame, config)
+
+    #showting normalized data
+    model.select("features", "scaledFeatures").show()
+
+    #save data frame into desired path
+    saveData(model, 'minmax_norm_example.csv', 'csv')
+
+    #save model into desired path
+    saveModel(config,'minmax_norm_model')
