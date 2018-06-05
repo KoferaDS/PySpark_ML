@@ -71,7 +71,7 @@ def randomforestRegression (df,conf):
     if conf["tuning"]:
         if conf["tuning"].get("method").lower() == "crossval":
             folds = conf["tuning"].get("methodParam", 4)
-# Set the hiperparameter that we want to grid, ex: maxDepth and numTrees
+# Set the hyperparameter that we want to grid, ex: maxDepth and numTrees
             grid = ParamGridBuilder()\
                 .addGrid(rfr.maxDepth,[3,4,5])\
                 .addGrid(rfr.numTrees,[15,20])\
@@ -82,7 +82,7 @@ def randomforestRegression (df,conf):
             model = cv.fit(df)
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
             tr = conf["tuning"].get("methodParam", 0.8)
-# Set the hiperparameter that we want to grid, ex: maxDepth and numTrees
+# Set the hyperparameter that we want to grid, ex: maxDepth and numTrees
             grid = ParamGridBuilder()\
                 .addGrid(rfr.maxDepth,[3,4,5])\
                 .addGrid(rfr.numTrees,[15,20])\
@@ -114,7 +114,7 @@ def loadModel(path):
 
 
 def predict (df, model):
-    """ 
+    """ Prediction value by the trained model
         Input  : -Dataframe test(df)
                  -Trained model (model)
         Output : -Dataframe with prediction column (transformed)
@@ -172,7 +172,7 @@ featureIndexer =\
                       maxCategories=4).fit(df_rfr)
  
 #     Applied methods to Data
-# IR Model
+# RFR Model
 trained_model = randomforestRegression(df_training,conf1)
 
 ##Save model
