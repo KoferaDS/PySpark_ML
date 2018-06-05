@@ -22,7 +22,7 @@ config = {
         }
 
 #fit data frame into maximum absolute model
-def scaleModel(dataFrame,conf):
+def maxAbsScaler(dataFrame,conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
@@ -39,7 +39,7 @@ def transformModel(dataFrame, conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: model [scaled data frame]
     """
-    model = scaleModel(dataFrame, conf)
+    model = maxAbsScaler(dataFrame, conf)
     return model.transform(dataFrame)
 
 #save maximum absolute scaler
