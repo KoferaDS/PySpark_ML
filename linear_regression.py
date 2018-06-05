@@ -12,6 +12,41 @@ from pyspark.ml.evaluation import RegressionEvaluator
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)    
  
+ 
+#hiperparameter yang akan di grid (kemudian diproses pada ML-tuning)
+grid = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
+
+
+#parameter regresi linear
+linear_params = { 
+                    "maxIter" : 5, "regParam" : 0.01, 
+                    "elasticNetParam" : 1.0,  "weightCol" : "weight"
+                }
+
+#tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
+#methodParam untuk crossval : int (bilangan bulat) contoh : 3
+#method param untuk trainval : pecahan antara 0 sampai 1
+tune_params = { 
+                 "method" : "trainvalsplit", 
+                 "paramGrids" : grid, 
+                 "methodParam" : 0.8  
+                }
+
+#conf1 digunakan apabila tidak akan dilakukan tuning parameter
+conf1 = {   
+          "params" : linear_params,
+          "tuning" : None
+        }
+
+
+#conf2 digunakan apabila akan dilakukan tuning parameter
+conf2 = {   
+          "params" : linear_params,
+          "tuning" : tune_params
+        }
+
+
+
 
   
 #Membuat model menggunakan regresi linear (dari data training)
@@ -144,39 +179,6 @@ def rowSlicing(df, n):
 
 
 
-#hiperparameter yang akan di grid (kemudian diproses pada ML-tuning)
-grid = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
-
-
-#parameter regresi linear
-linear_params = { 
-                    "maxIter" : 5, "regParam" : 0.01, 
-                    "elasticNetParam" : 1.0,  "weightCol" : "weight"
-                }
-
-#tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
-#methodParam untuk crossval : int (bilangan bulat) contoh : 3
-#method param untuk trainval : pecahan antara 0 sampai 1
-tune_params = { 
-                 "method" : "trainvalsplit", 
-                 "paramGrids" : grid, 
-                 "methodParam" : 0.8  
-                }
-
-#conf1 digunakan apabila tidak akan dilakukan tuning parameter
-conf1 = {   
-          "params" : linear_params,
-          "tuning" : None
-        }
-
-
-#conf2 digunakan apabila akan dilakukan tuning parameter
-conf2 = {   
-          "params" : linear_params,
-          "tuning" : tune_params
-        }
-
-
 
 #load input data
 linear_df = spark.read.format("libsvm")\
@@ -195,8 +197,8 @@ testing = predict(test, model)
 testing.show(10)
 
 #mencari dan menampilkan R-square dari data prediksi
-rsq = summaryR2(testing, "prediction", "label")
-rsq.show()
+r2 = summaryR2(testing, "prediction", "label")
+r2.show()
 
 #mencari dan menampilkan nilai RMS dari data prediksi
 rms= summaryRMSE(testing, "prediction", "label")
