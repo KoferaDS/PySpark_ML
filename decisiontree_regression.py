@@ -1,77 +1,110 @@
-"""
-Created on Mon May 21 13:39:41 2018
-
-"""
+# -*- coding: utf-8 -*-
 from pyspark.ml.linalg import Vectors
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml import Pipeline
+
 from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.regression import DecisionTreeModel
+
 from pyspark.ml.feature import VectorIndexer
-from pyspark.ml.tuning import (CrossValidator, ParamGridBuilder)
+from pyspark.ml.tuning import (TrainValidationSplit, CrossValidator, ParamGridBuilder)
+from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
 from pyspark.ml.evaluation import RegressionEvaluator
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)
 
 
-#Decision Tree Model using train-data
-def dtree_reg(train_df, conf):
+#Fungsi untuk mendapatkan model dari data (trained model)
+def dtRegressor(df, conf):
     """ input : df [spark.dataframe], conf [configuration params]
         output : decisiontree_regression model [model]
     """
-    maxDepth    = conf["params"].get("maxDepth")
     featuresCol = conf["params"].get("featuresCol")
-    maxBin = conf["params"].get("maxBins")
-    seed = conf["params"].get("seed")
-    minInstancesPerNode = conf["params"].get("minInstancesPerNode")
-    minInfoGain = conf ["params"].get("minInfoGain")
-    maxMemoryInMB = conf["params"].get("maxMemoryInMB")
-    cacheNodeIds = conf["params"].get("cacheNodeIds")
-    checkpointInterval = conf["params"].get("checkpointInterval")
-    impurity = conf["params"].get("impurity")
-    seed = conf["params"].get("seed")
-    varianceCol = conf["params"].get("varianceCol")   
+    impurity = conf["params"].get("impurity", "variance")
+    
+    maxDepth    = conf["params"].get("maxDepth", 5)
+    maxBin = conf["params"].get("maxBins",32)
+    minInstancesPerNode = conf["params"].get("minInstancesPerNode", 1)
+    minInfoGain = conf ["params"].get("minInfoGain", 0.0)
+    maxMemoryInMB = conf["params"].get("maxMemoryInMB",256)
+    cacheNodeIds = conf["params"].get("cacheNodeIds", False)
+    checkpointInterval = conf["params"].get("checkpointInterval", 10)
+    seed = conf["params"].get("seed", None)
+    varianceCol = conf["params"].get("varianceCol", None)   
     
     dt = DecisionTreeRegressor(maxDepth=maxDepth,featuresCol=featuresCol)
     pipeline = Pipeline(stages=[featureIndexer, dt])
-    #Cross Validation
-    if conf["crossval"].get("crossval") == True:
-            grid = ParamGridBuilder().build()
+    
+    print ("maxDepth : " , dt.getMaxDepth())
+    
+    #Jika menggunakan ML-Tuning Cross Validation
+    if conf["tuning"].get("method") == "crossval":
+            grid = ParamGridBuilder().addGrid(dt.maxDepth, [3,4,5]).build()
+            fold = conf["tuning"].get("methodParam")
             evaluator = RegressionEvaluator \
             (labelCol="label", predictionCol="prediction", metricName="r2")
-            cv = CrossValidator(estimator=dt, estimatorParamMaps=grid, evaluator=evaluator, 
-                        parallelism=2)
-            dtModel = cv.fit(train_df)
-            
-    if conf["crossval"].get("crossval") == False:
-            dtModel = pipeline.fit(train_df)
+            cv = CrossValidator(estimator=pipeline, estimatorParamMaps=grid, evaluator=evaluator, 
+                        numFolds=fold)
+            model = cv.fit(df)
+    
+    #Jika menggunakan ML-Tuning Train Validation Split
+    elif conf["tuning"].get("method") == "trainval":
+            grid = ParamGridBuilder().addGrid(dt.maxDepth, [3,4,5]).build()
+            tr = conf["tuning"].get("methodParam")
+            evaluator = RegressionEvaluator()
+            tvs = TrainValidationSplit(estimator=pipeline, estimatorParamMaps=grid, 
+                                       evaluator=evaluator, trainRatio=tr )
+            model = tvs.fit(df)
+    
+    #Jika tidak menggunakan ML-Tuning        
+    elif conf["tuning"].get("method") == None:
+            model = pipeline.fit(df)
        
-    return dtModel
+    return model
+
+#Menampilkan tree model (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
+def treeModel(model):
+    tModel = model.stages[1]
+    return tModel    
+
+#Menampilkan validator metri (jika menggunakan ML-Tuning)
+def validatorMetrics(model):
+    vm = model.validationMetrics
+    return vm
 
 #Save Model
 def saveModel(model, path):
     model.save(path)
 
 #Load Model
-def loadModel(path):
-    model = DecisionTreeModel.load(path)
+def loadModel(path): 
+    #Jika menggunakan ML-Tuning Cross Validation, maka tipe model = CrossValidatorModel
+    if config["tuning"].get("method") == "crossval" :
+        model = CrossValidatorModel.load(path)        
+    #Jika menggunakan ML-Tuning Train Validation, maka tipe model = TrainValidationSplitModel
+    elif config["tuning"].get("method") == "trainval":
+        model = TrainValidationSplitModel.load(path)
+    #Jika tidak menggunakan ML-Tuning, maka tipe model = DecisionTreeModel    
+    elif config["tuning"].get("method") == None:
+        model = DecisionTreeModel.load(path)
+        
     return model
 
 
-#Predict test data using trained-model
-def predict(test_df, model):
+#Fungsi untuk melakukan prediksi dengan menggunakan trained model
+def predict(df, model):
     """ input   : df [spark.dataframe], linear_regression model [model]
         output  : prediction [dataframe]
     """    
-    val = model.transform(test_df)
+    val = model.transform(df)
     prediction = val.select("label","prediction")
     return prediction
 
 
-#R-square function
-def r_square(df, col_prediction, col_label):
+#funsi untuk mendapat nilai R-square
+def summaryR2(df, col_prediction, col_label):
     """ input : df [spark.dataframe]
         output : R squared on test data [float]
     """    
@@ -83,17 +116,17 @@ def r_square(df, col_prediction, col_label):
     return r2_df
 
 
-#Showing RMSE using test data
-def rmse(df, col_prediction, col_label):
-        """ input : df [spark.dataframe]
-            output : RMS on test data [float]
-        """    
-        lr_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
+#fungsi untuk mendapat nilai RMS
+def summaryRMSE(df, col_prediction, col_label):
+    """ input : df [spark.dataframe]
+        output : RMS on test data [float]
+    """    
+    lr_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
                  labelCol=col_label, metricName="rmse")
-        rmse =  lr_evaluator.evaluate(df)
-        rmse = [(Vectors.dense(rmse),)]
-        rmse_df = spark.createDataFrame(rmse, ["RMS"])
-        return rmse_df
+    rmse =  lr_evaluator.evaluate(df)
+    rmse = [(Vectors.dense(rmse),)]
+    rmse_df = spark.createDataFrame(rmse, ["RMS"])
+    return rmse_df
 
     
 #Showing selected row
@@ -105,7 +138,8 @@ def row_slicing(df, n):
 
 
 
-# Loading data (dataframe-format)
+
+#Dataframe input
 df = spark.read.format("libsvm").load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")
 
 # Automatically identify categorical features, and index them.
@@ -113,33 +147,34 @@ df = spark.read.format("libsvm").load("C:/Users/Lenovo/spark-master/data/mllib/s
 featureIndexer =\
         VectorIndexer(inputCol="features", outputCol="indexedFeatures", maxCategories=4).fit(df)
 
-# Split the data into training and test sets (30% held out for testing)
-(train_df, test_df) = df.randomSplit([0.7, 0.3])
+#Mencacah dataframe menjadi train dan test data dengan ratio 70% train data, 30% test data
+(train, test) = df.randomSplit([0.7, 0.3])
 
 
 #Parameter Configuration 
 config       =  {
-                 "params" : {"maxDepth" : 2, "featuresCol":"features", "labelCol":"label", 
-                             "predictionCol" : "prediction", "maxBins" : 32,
-                             "minInstancesPerNode" : 1, "minInfoGain" : 0.0,
-                             "maxMemoryInMB" : 256, "chacheNodeIds" : False,
-                             "checkpointInterval" : 10, "impurity" : "variance",
-                             "seed" : None, "varianceCol" : None
-                             },
-                 "crossval" : {"crossval" : False, "N" : 5, "metricName" : "r2"}
+                 "params" : {"maxDepth" : 3, "featuresCol":"features", "labelCol":"label", 
+                             "predictionCol" : "prediction"},
+                             
+                 #tuning method = None, jika tidak menggunakan ML-Tuning
+                 #tuning method = crossval, jika menggunakan ML-Tuning Cross Validation
+                 #tuning method = trainval, jika menggunakan ML-Tuning Train Validation Split
+                 "tuning" : {"method" : "trainval" , "methodParam" : 0.8}
                  }
 
 
 
-#getting model
-model = dtree_reg(train_df, config)
-treeModel = model.stages[1]
+#mendapatkan model menggunakan fungsi dtRegressor, dengan train data.
+model = dtRegressor(train, config)
 
-#getting prediction
-testing = predict (test_df, model)
+#mendapatkan dan menampilkan prediksi dari test data dengan menggunakan model yang sudah di-train
+testing = predict (test, model)
+testing.show(10)
 
-#getting R-square
-rsq = r_square(testing, "prediction", "label")
+#menampilkan R-square dari hasil prediksi
+r2 = summaryR2(testing, "prediction", "label")
+r2.show()
 
-#getting RMS
-rms = rmse(testing, "prediction", "label")
+#menampilkan RMS dari hasil prediksi
+rms = summaryRMSE(testing, "prediction", "label")
+rms.show()
