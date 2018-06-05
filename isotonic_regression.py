@@ -11,7 +11,7 @@ from pyspark.sql import Row
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)  
 
-#    Set parameter in Isotonic Regression
+#    Set parameter and its value for Isotonic Regression
 isotonic_params = {
                     "predictionCol" : "prediction",
                     "labelCol" : "label",
@@ -49,8 +49,9 @@ def isotonicRegression(df, conf):
   feature_col = conf["params"].get("featuresCol", "features")
   label_col = conf["params"].get("labelCol", "label")
   pred_col = conf["params"].get("predictionCol", "prediction")
-  isoton = conf["params"].get("isotonic",True)
-  feature_index = conf["params"].get("featureIndex",0)
+  weight_col = conf["params"].get["weightCol", "weight")
+  isoton = conf["params"].get("isotonic", True)
+  feature_index = conf["params"].get("featureIndex", 0)
       
   ir = IsotonicRegression(featuresCol=feature_col,labelCol=label_col,
                           predictionCol=pred_col, isotonic=isoton, 
@@ -67,7 +68,7 @@ def isotonicRegression(df, conf):
     elif conf["tuning"].get("method").lower() == "trainvalsplit":
       tr = conf["tuning"].get("methodParam", 0.8)
       pg = ParamGridBuilder().build()
-      evaluator = RegressionEvaluator()
+      evaluator = RegressionEvaluator(metricName = "r2")
       tvs = TrainValidationSplit(estimator=ir, estimatorParamMaps=pg,
                                  evaluator=evaluator, trainRatio=tr)
       model = tvs.fit(df)
@@ -154,20 +155,31 @@ if __name__ == "__main__":
 df_isoton = spark.read.format("libsvm")\
             .load("D:\Kofera\spark-master\data\mllib\sample_isotonic_regression_libsvm_data.txt")    
     
-    # Splitting dataframe into dataframe training and test 
-    # (if not use any of tuning params)
+    # Splitting dataframe into dataframe training and test, 
+    # ex: 0.6 (60 datainput used as df training and 0.4 used as df test
 df_training, df_test = df_isoton.randomSplit([0.6, 0.4], seed=11)
 df_training.cache()
    
     # Applied methods to Data
 # IR Model
 trained_model = isotonicRegression(df_training,conf2)
+
+##Save model
+#save = saveModel(trained_model, "path")
+
+##Load model
+#load_irmodel = loadIsotonicRegression("path")
+#load_cvmodel = loadCrossValidation("path")
+#load_tvsmodel = loadTrainValidationSplit("path")
+
 # Prediction
 testing = predict(df_test,trained_model)
 testing.show()
+
 # Root square
 r2      = summary_R2(testing, "prediction", "label")  
 r2.show() 
+
 # Root mean square
 rmse    = summary_Rmse(testing,"prediction", "label")  
 rmse.show()
