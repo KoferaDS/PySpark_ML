@@ -19,8 +19,9 @@ grid = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
 
 #parameter regresi linear
 linear_params = { 
-                    "maxIter" : 5, "regParam" : 0.01, 
-                    "elasticNetParam" : 1.0,  "weightCol" : "weight"
+                    "maxIter" : 5, 
+                    "regParam" : 0.01, 
+                    "elasticNetParam" : 1.0
                 }
 
 #tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
@@ -121,13 +122,23 @@ def linearRegressor(df, conf):
 #menyimpan model
 def saveModel(model, path):
     model.save(path)
-    return
-
 
 #Load Model
 def loadModel(path):
-    model = LinearRegressionModel.load(path)
-    return model
+    
+    tipe = type(model)
+    
+    #Jika menggunakan ML-Tuning Cross Validation, maka tipe model = CrossValidatorModel
+    if tipe == "pyspark.ml.tuning.CrossValidatorModel" :
+        loading_model = CrossValidatorModel.load(path)        
+    #Jika menggunakan ML-Tuning Train Validation, maka tipe model = TrainValidationSplitModel   
+    elif tipe == "pyspark.ml.tuning.TrainValidationSplitModel":
+        loading_model = TrainValidationSplitModel.load(path)
+    #Jika tidak menggunakan ML-tuning, tipe model = LinearRegressionModel    
+    elif tipe == "pyspark.ml.tuning.LinearRegressionModel":
+        loading_model = LinearRegressionModel.load(path)
+    
+    return loading_model
 
 
 #menampilkan prediksi test data, jika menggunakan model regresi linear
