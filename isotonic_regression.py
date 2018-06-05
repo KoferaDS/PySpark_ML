@@ -11,7 +11,7 @@ from pyspark.sql import Row
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)  
 
-#    Define default parameter in Isotonic Regression
+#    Set parameter in Isotonic Regression
 isotonic_params = {
                     "predictionCol" : "prediction",
                     "labelCol" : "label",
@@ -19,13 +19,17 @@ isotonic_params = {
                     "weightCol" : "weight",
                     "isotonic" : True,
                     "featureIndex" : 0
-                  }            
-#    Define params tuning whether use "crossval" or "trainvalsplit" to train data
+                  }  
+
+#    Set params tuning whether use : - method "crossval" or "trainvalsplit" to train data
+#                                    - methodParams is set as fold for "crossval" (value : f>0)
+#                                      and trainratio for "trainvalsplit (value: 0<tr<1)
 tune_params = {
                 "method" : "trainvalsplit",
                 "methodParams" : 5
               }
-#    Define configuration whether use tuning/non-tuning
+
+#    Set configuration whether use tuning/non-tuning
 conf1   =  {
                 "params" : isotonic_params,
                 "tuning" : None
@@ -42,10 +46,15 @@ def isotonicRegression(df, conf):
                  - Tuning and hiperparameter configuration (conf)
         output : - Isotonic regression model (model)
   """
+  feature_col = conf["params"].get("featuresCol", "features")
+  label_col = conf["params"].get("labelCol", "label")
+  pred_col = conf["params"].get("predictionCol", "prediction")
   isoton = conf["params"].get("isotonic",True)
   feature_index = conf["params"].get("featureIndex",0)
       
-  ir = IsotonicRegression(isotonic=isoton, featureIndex=feature_index)
+  ir = IsotonicRegression(featuresCol=feature_col,labelCol=label_col,
+                          predictionCol=pred_col, isotonic=isoton, 
+                          featureIndex=feature_index)
 
   if conf["tuning"]:
     if conf["tuning"].get("method").lower() == "crossval":
@@ -74,7 +83,7 @@ def saveModel(model,path):
     '''
     model.save(path)
     return
-
+  
 def loadIsotonicRegressor(path):
     '''Loading model from path.
        Input  : - Path
@@ -83,8 +92,7 @@ def loadIsotonicRegressor(path):
     model = IsotonicRegressionModel.load(path)
     return model
 
-
-def predict (df, model):
+def predict(df, model):
     """ Prediction value by the trained model
         Input  : -Dataframe test(df)
                  -Trained model (model)
@@ -93,7 +101,7 @@ def predict (df, model):
     transformed = model.transform(df).select("label","prediction")
     return transformed
     
-def prediction (df,model):
+def prediction(df,model):
     """ show dataframe of prediction in kernel
          Input  : -Dataframe test(df)
                   -Trained model (model)
@@ -101,25 +109,23 @@ def prediction (df,model):
     """
     model.transform(df).show()
 
-def summary_R2 (df,prediction,label):
-    """ 
+def summary_R2(df):
+    """ Root square value from the model
         input  : -Dataframe prediction (df)
         output : -Dataframe of R^2 and Rms (df)
     """    
-    evaluator = RegressionEvaluator(predictionCol="prediction", 
-                                       labelCol = "label", metricName="r2")
+    evaluator = RegressionEvaluator(metricName="r2")
     R2      = evaluator.evaluate(df)
     v_R2    = [(Vectors.dense(R2),)]
     df_R2   = spark.createDataFrame(v_R2, ["R^2"])  
     return df_R2
 
-def summary_Rmse (df,prediction,label):
-    """ 
+def summary_Rmse(df):
+    """ Root mean square value from the model
         input  : -Dataframe prediction (df)
         output : -Dataframe of R^2 and Rms (df)
     """    
-    evaluator = RegressionEvaluator(predictionCol="prediction", 
-                                       labelCol = "label", metricName="rmse")
+    evaluator = RegressionEvaluator(metricName="rmse")
     Rmse     = evaluator.evaluate(df)
     v_Rmse   = [(Vectors.dense(Rmse),)]
     df_Rmse  = spark.createDataFrame(v_Rmse, ["Rmse"])  
@@ -155,9 +161,9 @@ df_training.cache()
    
     # Applied methods to Data
 # IR Model
-trained_model = isotonicRegression(df_isoton,conf2)
+trained_model = isotonicRegression(df_training,conf2)
 # Prediction
-testing = predict(df_isoton,trained_model)
+testing = predict(df_test,trained_model)
 testing.show()
 # Root square
 r2      = summary_R2(testing, "prediction", "label")  
