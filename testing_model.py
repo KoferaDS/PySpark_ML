@@ -10,11 +10,14 @@ from pyspark.ml.classification import GBTClassifier
 from pyspark.ml.classification import MultilayerPerceptronClassifier
 from pyspark.ml.classification import OneVsRest
 
-
+from pyspark.sql import SparkSession
+from pyspark.context import SparkContext
 
 from pyspark.ml.evaluation import BinaryClassificationEvaluator
-from pyspark.ml.tuning import CrossValidator, ParamGridBuilder
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder,TrainValidationSplit
 from pyspark.mllib.util import MLUtils
+
+
 
 import numpy
 from numpy import allclose
@@ -27,14 +30,14 @@ from pyspark.ml.feature import StringIndexer
 sc = SparkContext.getOrCreate()
 #sc = SparkContext('local')
 spark = SparkSession(sc)
-
+ 
 
 
 logistic_params = { 
                     "maxIter" : 5, 
                     "regParam" : 0.01, 
                     "elasticNetParam" : 1.0, 
-                    "weightCol" : "weight"
+#                    "weightCol" : "weight"
                     }
 
 
@@ -86,8 +89,8 @@ def logisticClassifier(df, conf):
   
   lr = LogisticRegression(maxIter=max_iter, regParam=reg_param, elasticNetParam=elasticNet_param, \
           tol=tolr, fitIntercept=fit_intercept, threshold=thres, standardization=std, \
-            aggregationDepth=aggr, family=fml, weightCol=weight)
-    
+            aggregationDepth=aggr, family=fml)
+
   if conf["tuning"]:
     if conf["tuning"].get("method").lower() == "crossval":
       logReg = LogisticRegression()
@@ -129,10 +132,10 @@ def prediction(df, model):
 if __name__ == "__main__":
   
   data = sc.parallelize([
-     Row(label=1.0, weight=1.0, features=Vectors.dense(0.0, 5.0)),
-     Row(label=0.0, weight=2.0, features=Vectors.dense(1.0, 2.0)),
-     Row(label=1.0, weight=3.0, features=Vectors.dense(2.0, 1.0)),
-     Row(label=0.0, weight=4.0, features=Vectors.dense(3.0, 3.0))]).toDF()
+     Row(label=1.0, features=Vectors.dense(0.0, 5.0)),
+     Row(label=0.0, features=Vectors.dense(1.0, 2.0)),
+     Row(label=1.0, features=Vectors.dense(2.0, 1.0)),
+     Row(label=0.0, features=Vectors.dense(3.0, 3.0))]).toDF()
   
   data2 = spark.createDataFrame([(Vectors.dense([0.0]), 0.0),
       (Vectors.dense([0.4]), 1.0), (Vectors.dense([0.5]), 0.0),
@@ -140,7 +143,7 @@ if __name__ == "__main__":
      ["features", "label"])
   
   
-  logistic_model = logisticClassifier(data, conf2)
+  logistic_model = logisticClassifier(data, conf)
   #print ("model coefficients : ", logistic_model.coefficients)
   #print ("model intercept : ", logistic_model.intercept)
   

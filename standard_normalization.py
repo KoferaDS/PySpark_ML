@@ -28,10 +28,10 @@ def scaleModel(dataFrame,conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
     """
-    mean = conf.get("withMean")
-    std = conf.get("withStd")
-    input = conf.get("inputCol")
-    output = conf.get("outputCol")
+    mean = conf.get("withMean", False)
+    std = conf.get("withStd", True)
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
     scaler = StandardScaler(inputCol = input, outputCol = output, 
                             withMean = mean, withStd = std)
     model = scaler.fit(dataFrame)
@@ -53,10 +53,10 @@ def saveModel(conf, path):
         input: configuration params, path
         output: void
     """
-    mean = conf.get("withMean")
-    std = conf.get("withStd")
-    input = conf.get("inputCol")
-    output = conf.get("outputCol")
+    mean = conf.get("withMean", False)
+    std = conf.get("withStd", True)
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
     scaler = StandardScaler(inputCol = input, outputCol = output, 
                             withMean = mean, withStd = std)
     scaler.save(path)

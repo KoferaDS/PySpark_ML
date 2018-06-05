@@ -27,8 +27,8 @@ def scaleModel(dataFrame,conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
     """
-    inp = conf.get("inputCol")
-    output = conf.get("outputCol")
+    inp = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
     scaler = MaxAbsScaler(inputCol = inp, outputCol = output)
     model = scaler.fit(dataFrame)
     return model
@@ -48,8 +48,8 @@ def saveModel(conf, path):
         input: configuration params, path
         output: void
     """
-    inp = conf.get("inputCol")
-    output = conf.get("outputCol")
+    inp = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
     scaler = MaxAbsScaler(inputCol = inp, outputCol = output)
     scaler.save(path)
     return

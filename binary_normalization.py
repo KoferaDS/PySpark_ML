@@ -26,9 +26,9 @@ def transformModel(dataFrame, conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: binary normalized data frame
     """
-    input = conf.get("inputCol")
-    output = conf.get("outputCol")
-    tres = conf.get("threshold")
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
+    tres = conf.get("threshold", 0.0)
     scaler = Binarizer(threshold = tres,inputCol = input, outputCol = output)
     model = scaler.transform(dataFrame)
     return model
@@ -39,9 +39,9 @@ def saveModel(conf,path):
         input: configuration params, path
         output: void
     """
-    input = conf.get("inputCol")
-    output = conf.get("outputCol")
-    tres = conf.get("threshold")
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
+    tres = conf.get("threshold", 0.0)
     scaler = Binarizer(threshold = tres,inputCol = input, outputCol = output)
     scaler.save(path)
 

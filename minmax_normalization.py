@@ -32,10 +32,10 @@ def scaleModel(dataFrame, conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
     """
-    input = conf.get("inputCol")
-    output = conf.get("outputCol")
-    minimum = conf.get("min")
-    maximum = conf.get("max")
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
+    minimum = conf.get("min", 0.0)
+    maximum = conf.get("max", 1.0)
     scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
                           outputCol = output)
     model = scaler.fit(dataFrame)
@@ -56,10 +56,10 @@ def saveModel(conf, path):
         input: configuration params for [MinMaxScaler], path
         output: void
     """
-    input = conf.get("inputCol")
-    output = conf.get("outputCol")
-    minimum = conf.get("min")
-    maximum = conf.get("max")
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
+    minimum = conf.get("min", 0.0)
+    maximum = conf.get("max", 1.0)
     scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
                           outputCol = output)
     scaler.save(path)
