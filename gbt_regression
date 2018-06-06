@@ -3,6 +3,7 @@ from pyspark.ml.linalg import Vectors
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml import Pipeline
+from pyspark.ml import PipelineModel
 
 from pyspark.ml.regression import GBTRegressor
 from pyspark.ml.regression import GBTRegressionModel
@@ -147,7 +148,7 @@ def loadModel(conf, path):
     
     #Jika tidak menggunakan ML-tuning, tipe model = LinearRegressionModel    
     elif conf["tuning"] == None:
-        loading_model = GBTRegressionModel.load(path)
+        loading_model = PipelineModel.load(path)
     
     return loading_model
 
