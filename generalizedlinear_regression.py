@@ -10,7 +10,6 @@ from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
 from pyspark.ml.evaluation import RegressionEvaluator
 
 # set-up spark
-
 spark = SparkSession\
     .builder\
     .appName("GeneralizedLinearRegressionExample")\
@@ -244,4 +243,5 @@ if __name__ == "__main__":
     rms = summaryRMSE(testing, "prediction", "label")
     rms.show()
     
+    # save model into desired path
     saveModel(model, "generalized_linear_regression_model_example")
