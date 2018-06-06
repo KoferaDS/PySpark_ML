@@ -3,6 +3,7 @@ from pyspark.ml.linalg import Vectors
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml import Pipeline
+from pyspark.ml import PipelineModel
 
 from pyspark.ml.regression import DecisionTreeRegressor
 from pyspark.ml.regression import DecisionTreeModel
@@ -88,7 +89,7 @@ def loadModel(path):
         model = TrainValidationSplitModel.load(path)
     #Jika tidak menggunakan ML-Tuning, maka tipe model = DecisionTreeModel    
     elif config["tuning"].get("method") == None:
-        model = DecisionTreeModel.load(path)
+        model = PipelineModel.load(path)
         
     return model
 
