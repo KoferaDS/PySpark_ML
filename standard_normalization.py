@@ -43,7 +43,7 @@ def transformModel(dataFrame, conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: scaled data frame
     """
-    model = scaleModel(dataFrame, conf)
+    model = standardScaler(dataFrame, conf)
     transformed = model.transform(dataFrame)
     return transformed
 

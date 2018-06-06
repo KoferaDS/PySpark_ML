@@ -20,18 +20,27 @@ config = {
             "outputCol" : "binarizedFeatures"  
         }
 
+#create binary normalizer model
+def binaryScaler(dataFrame, conf):
+    """
+        input: dataFrame [spark.dataFrame], conf [configuration params]
+        output: fitted model
+    """
+    input = conf.get("inputCol", None)
+    output = conf.get("outputCol", None)
+    tres = conf.get("threshold", 0.0)
+    model = Binarizer(threshold = tres,inputCol = input, outputCol = output)
+    return model
+
 #transform data from unfitted model into binary form
 def transformModel(dataFrame, conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: binary normalized data frame
     """
-    input = conf.get("inputCol", None)
-    output = conf.get("outputCol", None)
-    tres = conf.get("threshold", 0.0)
-    scaler = Binarizer(threshold = tres,inputCol = input, outputCol = output)
-    model = scaler.transform(dataFrame)
-    return model
+    model = binaryScaler(dataFrame, conf)
+    data = model.transform(dataFrame)
+    return data
 
 #save binary scaler
 def saveModel(conf,path):

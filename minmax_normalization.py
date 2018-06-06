@@ -47,7 +47,7 @@ def transformModel(dataFrame, conf):
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: scaled data frame
     """
-    model = scaleModel(dataFrame, conf)
+    model = minMaxScaler(dataFrame, conf)
     return model.transform(dataFrame)
 
 #save minimum maximum scaler
