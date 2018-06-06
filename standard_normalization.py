@@ -23,7 +23,7 @@ config = {
         }
 
 #fit data frame into standard model
-def scaleModel(dataFrame,conf):
+def standardScaler(dataFrame,conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
