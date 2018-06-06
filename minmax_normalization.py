@@ -27,7 +27,7 @@ config = {
         }
 
 #fit data frame into minimum maximum model
-def scaleModel(dataFrame, conf):
+def minMaxScaler(dataFrame, conf):
     """
         input: dataFrame [spark.dataFrame], conf [configuration params]
         output: fitted model
