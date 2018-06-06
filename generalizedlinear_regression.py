@@ -166,15 +166,15 @@ def loadModel(conf, path):
             loading_model = TrainValidationSplitModel.load(path)
 
     elif conf["tuning"] == None:
-        loading_model = GeneralizedLinearRegressionModel(path)
+        loading_model = GeneralizedLinearRegressionModel.load(path)
 
     return loading_model
 
 # create prediction from data frame by using generalized linear regression
 def predict(dataFrame, model):
     """
-        input  : dataFrame [spark.dataFrame], generalized linear regression model
-                 [model]
+        input  : dataFrame [spark.dataFrame], generalized linear regression
+                 model [model]
         output : prediction [data frame]
     """
     val = model.transform(dataFrame)
@@ -245,3 +245,10 @@ if __name__ == "__main__":
     
     # save model into desired path
     saveModel(model, "generalized_linear_regression_model_example")
+    
+    # load model from desired path
+    model2 = loadModel(conf1, "generalized_linear_regression_model_example")
+    
+    # show top 10 results from loaded model
+    testing2 = predict(test, model2)
+    testing2.show(10)
