@@ -16,18 +16,29 @@ from pyspark.ml.evaluation import RegressionEvaluator
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)
 
-#Parameter Configuration 
+
 config       =  {
-                 "params" : {"maxDepth" : 3, "featuresCol":"features", "labelCol":"label", 
-                             "predictionCol" : "prediction"},
+                 "params" : {"maxDepth" : 3, 
+                             "featuresCol":"features", 
+                             "labelCol":"label", 
+                             "predictionCol" : "prediction", 
+                             "maxBins" : 32, 
+                             "minInstancesPerNode" : 1, 
+                             "minInfoGain" : 0.0, 
+                             "maxMemoryInMB" : 256, 
+                             "cacheNodeIds" : False, 
+                             "checkpointInterval" : 10, 
+                             "impurity" : 'variance', 
+                             "seed" : None, 
+                             "varianceCol" :None
+                             },
                              
                  #tuning method = None, jika tidak menggunakan ML-Tuning
                  #tuning method = crossval, jika menggunakan ML-Tuning Cross Validation
                  #tuning method = trainval, jika menggunakan ML-Tuning Train Validation Split
-                 "tuning" : {"method" : "trainval" , "methodParam" : 0.8}
+                 "tuning" : {"method" : None , "methodParam" : 0.8}
                  }
-
-
+                 
 
 #Fungsi untuk mendapatkan model dari data (trained model)
 def dtRegressor(df, conf):
@@ -79,20 +90,38 @@ def dtRegressor(df, conf):
 
 #Menampilkan tree model (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
 def treeModel(model):
+    """input : model (DecisionTreeModel/PipelineModel)
+       output : the depth and nodes of DecisionTreeRegressionModel
+    """
+    
     tModel = model.stages[1]
     return tModel    
 
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
+    """input : model (CrossValidatorModel / TrainValidationSplitModel)
+       output : validation metrics 
+    """
+    
     vm = model.validationMetrics
     return vm
 
 #Save Model
 def saveModel(model, path):
+    """input : model 
+                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+        output : void
+    """
+    
     model.save(path)
 
 #Load Model
 def loadModel(path): 
+    """input : conf, path
+       output : model
+                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+    """
+    
     #Jika menggunakan ML-Tuning Cross Validation, maka tipe model = CrossValidatorModel
     if config["tuning"].get("method") == "crossval" :
         model = CrossValidatorModel.load(path)        
