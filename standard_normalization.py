@@ -35,7 +35,7 @@ def standardScalerModel(df, conf):
     scaler = StandardScaler(inputCol = input, outputCol = output, 
                             withMean = mean, withStd = std)
     model = scaler.fit(dataFrame)
-    return model
+    return scaler, model
 
 #transform fitted model into standard scaled model
 def standardTransformData(model, dataFrame):
@@ -120,8 +120,8 @@ if __name__ == "__main__":
         (2, Vectors.dense([4.0, 10.0, 8.0]),)
     ], ["id", "features"])
         
-    #create standard normalization model
-    model = standardScalerModel(dataFrame, config)
+    #create standard normalization scaler and model
+    scaler, model = standardScalerModel(dataFrame, config)
 
     #normalize data frame by using standard normalization
     data = standardTransformData(model, dataFrame)

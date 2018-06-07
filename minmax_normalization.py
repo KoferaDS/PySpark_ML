@@ -39,9 +39,8 @@ def minMaxScalerModel(df, conf):
     maximum = conf.get("max", 1.0)
     scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
                           outputCol = output)
-    return scaler.fit(df)
-
-
+    model =  scaler.fit(df)
+    return scaler, model
 
 #transform fitted model into minimum maximum scaled model
 def minMaxTransformData(model, df):
@@ -131,8 +130,8 @@ if __name__ == "__main__":
         (2, Vectors.dense([3.0, 10.1, 3.0]),)
     ], ["id", "features"])
         
-    #create min max normalization model
-    model = minMaxScalerModel(dataFrame, config)
+    #create min max normalization scaler and model
+    scaler, model = minMaxScalerModel(dataFrame, config)
     
     #normalize data frame by using min max normalization
     data = minMaxTransformData(model, dataFrame)
@@ -141,7 +140,7 @@ if __name__ == "__main__":
     data.select("features", "scaledFeatures").show()
 
     #save data frame into desired path
-    saveMinMaxData(model, 'minmax_norm_example.csv', 'csv')
+    saveMinMaxData(data, 'minmax_norm_example.csv', 'csv')
 
     #save model into desired path
     saveMinMaxScalerModel(model, 'minmax_norm_model')
