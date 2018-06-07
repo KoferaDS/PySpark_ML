@@ -99,12 +99,21 @@ def treeModel(model):
 
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
-    """input : model (CrossValidatorModel / TrainValidationSplitModel)
+    """input : model (TrainValidationSplitModel)
        output : validation metrics 
     """
     
     vm = model.validationMetrics
     return vm
+
+
+#Menampilkan average metrics dari CrossValidator Model
+def avgMetrics(model):
+    """input    : CrossValidatorModel
+       output  : metrics
+    """
+    avm = model.avgMetrics
+    return avm   
 
 #Save Model
 def saveModel(model, path):
@@ -117,7 +126,7 @@ def saveModel(model, path):
 
 #Load Model
 def loadModel(path): 
-    """input : conf, path
+    """input : path
        output : model
                 (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
     """
