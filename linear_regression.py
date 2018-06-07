@@ -20,9 +20,16 @@ grid = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
 
 #parameter regresi linear
 linear_params = { 
-                    "maxIter" : 5, 
                     "regParam" : 0.01, 
-                    "elasticNetParam" : 1.0
+                    "elasticNetParam" : 1.0, 
+                    "maxIter" : 100, 
+                    "tol" : 1e-06, "fitIntercept" : True, 
+                    "standardization" : True, 
+                    "solver" : "auto", 
+                    "weightCol" : None, 
+                    "aggregationDepth" : 2, 
+                    "loss" : "squaredError", 
+                    "epsilon" : 1.35
                 }
 
 #tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
@@ -48,43 +55,40 @@ conf2 = {
         }
 
 
-
-
-  
 #Membuat model menggunakan regresi linear (dari data training)
 def linearRegressor(df, conf):
-        """ input : df [spark.dataframe], conf [configuration params]
-            output : linear_regression model [model]
-        """
-        #memanggil parameter (nilai default)
-        featuresCol= conf["params"].get("featuresCol", "features")
-        labelCol= conf["params"].get("labelCol", "label")
-        predictionCol = conf["params"].get("predictionCol", "prediction")
+    """ input : df [spark.dataframe], conf [configuration params]
+        output : linear_regression model [model]
+    """
+    #memanggil parameter (nilai default)
+    featuresCol= conf["params"].get("featuresCol", "features")
+    labelCol= conf["params"].get("labelCol", "label")
+    predictionCol = conf["params"].get("predictionCol", "prediction")
         
-        max_iter = conf["params"].get("maxIter", 100)
-        reg_param = conf["params"].get("regParam", 0.0)
-        elasticnet_param = conf["params"].get("elasticNetParam", 0.0)
-        tol = conf["params"].get("tol", 1e-6)
-        fitIntercept = conf["params"].get("fitIntercept", True)
-        standardization = conf["params"].get("standardization", True)
-        solver = conf["params"].get("solver", "auto")
-        weightCol = conf["params"].get("weightCol", None)
-        aggregationDepth = conf["params"].get("aggregationDepth", 2)
-        loss = conf["params"].get("loss", "squaredError")
-        epsilon =  conf["params"].get("epsilon", 1.35)        
+    max_iter = conf["params"].get("maxIter", 100)
+    reg_param = conf["params"].get("regParam", 0.0)
+    elasticnet_param = conf["params"].get("elasticNetParam", 0.0)
+    tol = conf["params"].get("tol", 1e-6)
+    fitIntercept = conf["params"].get("fitIntercept", True)
+    standardization = conf["params"].get("standardization", True)
+    solver = conf["params"].get("solver", "auto")
+    weightCol = conf["params"].get("weightCol", None)
+    aggregationDepth = conf["params"].get("aggregationDepth", 2)
+    loss = conf["params"].get("loss", "squaredError")
+    epsilon =  conf["params"].get("epsilon", 1.35)        
         
-        lr = LinearRegression(maxIter=max_iter, regParam=reg_param, 
+    lr = LinearRegression(maxIter=max_iter, regParam=reg_param, 
                               elasticNetParam=elasticnet_param)
         
-        print ("maxIter : " , lr.getMaxIter())
-        print ("regParam : " , lr.getRegParam())
-        print ("aggrDepth : " , lr.getAggregationDepth())
+    print ("maxIter : " , lr.getMaxIter())
+    print ("regParam : " , lr.getRegParam())
+    print ("aggrDepth : " , lr.getAggregationDepth())
         
-        #jika menggunakan ml-tuning
-        if conf["tuning"]:
+    #jika menggunakan ml-tuning
+    if conf["tuning"]:
             
-          #jika menggunakan ml-tuning cross validation  
-          if conf["tuning"].get("method").lower() == "crossval":
+        #jika menggunakan ml-tuning cross validation  
+        if conf["tuning"].get("method").lower() == "crossval":
             paramgGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
             for key in paramgGrids:
@@ -97,8 +101,8 @@ def linearRegressor(df, conf):
                                 evaluator=evaluator, numFolds= folds)
             model = cv.fit(df)
           
-          #jika menggunakan ml-tuning train validation split
-          elif conf["tuning"].get("method").lower() == "trainvalsplit":
+        #jika menggunakan ml-tuning train validation split
+        elif conf["tuning"].get("method").lower() == "trainvalsplit":
             paramgGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
             for key in paramgGrids:
@@ -111,23 +115,33 @@ def linearRegressor(df, conf):
                                        evaluator=evaluator, trainRatio=tr )
             model = tvs.fit(df)
             
-        #jika tidak menggunakan ml-tuning
-        elif conf["tuning"] == None:
+    #jika tidak menggunakan ml-tuning
+    elif conf["tuning"] == None:
           print ("test")
           model = lr.fit(df)
           
-        return model
+    return model
 
 
 
 #menyimpan model
 def saveModel(model, path):
+    """input : model 
+                (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
+        output : void
+    """
+    
     model.save(path)
-  
+    return
+
 
 #Load Model (jika tidak menggunakan ML-tuning = conf1, jika menggunakan ML-tuning = conf2 )
 def loadModel(conf, path):
-    
+    """input : conf, path
+       output : model
+                (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
+    """
+                   
     #Jika menggunakan ML-Tuning
     if conf["tuning"]:    
         #Jika menggunakan Cross Validation, maka tipe model = CrossValidatorModel
@@ -146,45 +160,45 @@ def loadModel(conf, path):
 
 #menampilkan prediksi test data, jika menggunakan model regresi linear
 def predict(df, model):
-        """ input   : df [spark.dataframe], linear_regression model [model]
-            output  : prediction [dataframe]
-        """    
-        val = model.transform(df)
-        prediction = val.select("label", "prediction")
-        return prediction
+    """ input   : df [spark.dataframe], linear_regression model [model]
+        output  : prediction [dataframe]
+    """    
+    val = model.transform(df)
+    prediction = val.select("label", "prediction")
+    return prediction
     
     
-#fungsi untuk mendapatkan nilai R-square 
+#menunjukkan nilai R-square 
 def summaryR2(df, predictionCol, labelCol):
-        """ input : df [spark.dataframe]
-            output : R squared on test data [float]
-        """    
-        lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
-                 labelCol=labelCol, metricName="r2")
-        r2 =  lr_evaluator.evaluate(df)
-        r2 = [(Vectors.dense(r2),)]
-        r2_df = spark.createDataFrame(r2, ["R-square"])
-        return r2_df
+    """ input : df [spark.dataframe]
+        output : R squared on test data [float]
+    """    
+    lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
+             labelCol=labelCol, metricName="r2")
+    r2 =  lr_evaluator.evaluate(df)
+    r2 = [(Vectors.dense(r2),)]
+    r2_df = spark.createDataFrame(r2, ["R-square"])
+    return r2_df
 
 
-#fungsi untuk mendapatkan nilai rms
+#menunjukkan nilai rms
 def summaryRMSE(df, predictionCol, labelCol):
-        """ input : df [spark.dataframe]
-            output : RMS on test data [float]
-        """    
-        lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
-                 labelCol=labelCol, metricName="rmse")
-        rmse =  lr_evaluator.evaluate(df)
-        rmse = [(Vectors.dense(rmse),)]
-        rmse_df = spark.createDataFrame(rmse, ["RMS"])
-        return rmse_df 
+    """ input : df [spark.dataframe]
+        output : RMS on test data [float]
+    """    
+    lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
+             labelCol=labelCol, metricName="rmse")
+    rmse =  lr_evaluator.evaluate(df)
+    rmse = [(Vectors.dense(rmse),)]
+    rmse_df = spark.createDataFrame(rmse, ["RMS"])
+    return rmse_df 
   
     
 #memilih hasil pada baris tertentu (prediksi)
 def rowSlicing(df, n):
-        num_of_data = df.count()
-        ls = df.take(num_of_data)
-        return ls[n]
+    num_of_data = df.count()
+    ls = df.take(num_of_data)
+    return ls[n]
 
 
 
