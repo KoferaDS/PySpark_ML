@@ -23,9 +23,10 @@ rfr_params = {
                 "featureSubsetStrategy" : "auto"
              }   
 
-# Set params tuning : - method "crossval" or "trainvalsplit"
-#                     - methodParams is set as fold for "crossval" (value : f>0)
-#                       and trainratio for "trainvalsplit" (value: 0<tr<1)
+# Set params tuning
+# method : "crossval" , "trainvalsplit"
+# methodParams is set as : - fold for "crossval" (value : f>0) 
+#                          - trainratio for "trainvalsplit" (value: 0<tr<1)f>0)
 
 tuning_params = {
                     "method" : "trainvalsplit",
@@ -72,26 +73,26 @@ def randomforestRegression (df,conf):
         if conf["tuning"].get("method").lower() == "crossval":
             folds = conf["tuning"].get("methodParam", 4)
         
-# Set the hyperparameter that we want to grid, in case: maxDepth and numTrees
+# Set the hyperparameter that we want to grid, incase: maxDepth and numTrees
             grid = ParamGridBuilder()\
                 .addGrid(rfr.maxDepth,[3,4,5])\
                 .addGrid(rfr.numTrees,[15,20])\
                 .build()
             evaluator = RegressionEvaluator()
             cv = CrossValidator(estimator=rfr, estimatorParamMaps=grid,
-                            evaluator=evaluator, numFolds=folds)
+                                evaluator=evaluator, numFolds=folds)
             model = cv.fit(df)
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
             tr = conf["tuning"].get("methodParam", 0.8)
        
-# Set the hyperparameter that we want to grid, in case: maxDepth and numTrees
+# Set the hyperparameter that we want to grid, incase: maxDepth and numTrees
             grid = ParamGridBuilder()\
                 .addGrid(rfr.maxDepth,[3,4,5])\
                 .addGrid(rfr.numTrees,[15,20])\
                 .build()
             evaluator = RegressionEvaluator()
             tvs = TrainValidationSplit(estimator=rfr, estimatorParamMaps=grid,
-                                   evaluator=evaluator, trainRatio=tr)
+                                       evaluator=evaluator, trainRatio=tr)
             model = tvs.fit(df)
     elif conf["tuning"] ==  None:
         model = pipeline.fit(df)
@@ -113,16 +114,15 @@ def loadModel(path):
     '''
   # Loaded model if use crossvalidation tuning
     if config["tuning"].get("method") == "crossval" :
-        model = CrossValidatorModel.load(path)   
+        loaded_model = CrossValidatorModel.load(path)   
   # Loaded model if use trainvalidationsplit tuning
     elif config["tuning"].get("method") == "trainval":
-        model = TrainValidationSplitModel.load(path)
+        loaded_model = TrainValidationSplitModel.load(path)
   # Loaded model if use pipeline (non-tuning)
     elif config["tuning"].get("method") == None:
-        model = PipelineModel.load(path)
+        loaded_model = PipelineModel.load(path)
         
-    return model
-
+    return loaded_model
 
 def predict (df, model):
     """ Prediction value by the trained model
@@ -194,8 +194,8 @@ featureIndexer =\
 # RFR Model
 trained_model = randomforestRegression(df_training,conf1)
 
-##Save model
-#save = saveModel(trained_model, "path")
+#Save model
+save = saveModel(trained_model, "path")
 
 #Load model
 loaded_model = loadModel("path")
