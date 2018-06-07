@@ -122,6 +122,23 @@ def linearRegressor(df, conf):
           
     return model
 
+#Menampilkan validator metri (jika menggunakan ML-Tuning)
+def validatorMetrics(model):
+    """input : model (TrainValidationSplitModel)
+       output : validation metrics 
+    """
+    
+    vm = model.validationMetrics
+    return vm
+
+
+#Menampilkan average metrics dari CrossValidator Model
+def avgMetrics(model):
+    """input    : CrossValidatorModel
+       output  : metrics
+    """
+    avm = model.avgMetrics
+    return avm   
 
 
 #menyimpan model
