@@ -21,9 +21,9 @@ isotonic_params = {
                     "featureIndex" : 0
                   }  
 
-#    Set params tuning whether use : - method "crossval" or "trainvalsplit" to train data
-#                                    - methodParams is set as fold for "crossval" (value : f>0)
-#                                      and trainratio for "trainvalsplit (value: 0<tr<1)
+#    Set params tuning : - method "crossval" or "trainvalsplit" to train data
+#                        - methodParams is set as fold for "crossval" (value : f>0)
+#                          and trainratio for "trainvalsplit (value: 0<tr<1)
 tune_params = {
                 "method" : "trainvalsplit",
                 "methodParams" : 5
@@ -85,7 +85,7 @@ def saveModel(model,path):
     model.save(path)
     return
   
-def loadIsotonicRegressor(path):
+def loadzmodel(path):
     '''Loading model from path.
        Input  : - Path
        Output : - Loaded model
@@ -139,19 +139,6 @@ def copyModel(model):
 # ------------------------------Test and examples--------------------------------
 
 #     Loads dataframe
-if __name__ == "__main__":
-  
-  data = sc.parallelize([
-     Row(label=1.0, weight=1.0, features=Vectors.dense(0.0, 5.0)),
-     Row(label=0.0, weight=2.0, features=Vectors.dense(1.0, 2.0)),
-     Row(label=1.0, weight=3.0, features=Vectors.dense(2.0, 1.0)),
-     Row(label=0.0, weight=4.0, features=Vectors.dense(3.0, 3.0))]).toDF()
-  
-  data2 = spark.createDataFrame([(Vectors.dense([0.0]), 0.0),
-      (Vectors.dense([0.4]), 1.0), (Vectors.dense([0.5]), 0.0),
-      (Vectors.dense([0.6]), 1.0), (Vectors.dense([1.0]), 1.0)] * 10,
-     ["features", "label"])
-  
 df_isoton = spark.read.format("libsvm")\
             .load("D:\Kofera\spark-master\data\mllib\sample_isotonic_regression_libsvm_data.txt")    
     
@@ -168,9 +155,7 @@ trained_model = isotonicRegression(df_training,conf2)
 #save = saveModel(trained_model, "path")
 
 ##Load model
-#load_irmodel = loadIsotonicRegression("path")
-#load_cvmodel = loadCrossValidation("path")
-#load_tvsmodel = loadTrainValidationSplit("path")
+#load_model = loadModel("path")
 
 # Prediction
 testing = predict(df_test,trained_model)
