@@ -5,11 +5,13 @@ from __future__ import print_function
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml.linalg import Vectors
+from pyspark.ml import Pipeline
 from pyspark.ml.feature import ChiSqSelector, ChiSqSelectorModel
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)
 
+#define parameter and configuration
 param = {
         "featuresCol" : "features",
         "labelCol" : "clicked",
@@ -22,8 +24,13 @@ conf = {
             ["numTopFeatures", "percentile", "fpr"]
         }
     
-    
+#create chiSquareSelector with numTopFeatures selector method    
 def numChiSqModel(df, conf):
+    '''
+        - input: - df [spark.dataFrame]
+                 - conf [configuration params]
+        - output: - generalized linear regression model [model]
+    '''
     label_col = conf["params"].get("labelCol")
     output_col = conf["params"].get("outputCol")
     features_col = conf["params"].get("featuresCol")
@@ -32,16 +39,23 @@ def numChiSqModel(df, conf):
                              outputCol=output_col, labelCol=label_col)
     
     selector.setSelectorType("numTopFeatures")
-    selector.setNumTopFeatures(20)
+    selector.setNumTopFeatures(3)
     
-    model = selector.fit(df)
+    pipeline = Pipeline(stages=[selector])
+    model = pipeline.fit(df)
     
-    print("Selector Type : %d " % selector.getNumTopFeatures())
-    print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
+    print("Selector Type : %s " % selector.getSelectorType())
+    print("ChiSqSelector output with top %d features selected" % selector.getNumTopFeatures())
     
     return model
 
+#create chiSquareSelector with percentile selector method
 def perChiSqModel(df, conf):
+    '''
+        - input: - df [spark.dataFrame]
+                 - conf [configuration params]
+        - output: - generalized linear regression model [model]
+    '''
     label_col = conf["params"].get("labelCol")
     output_col = conf["params"].get("outputCol")
     features_col = conf["params"].get("featuresCol")
@@ -52,14 +66,22 @@ def perChiSqModel(df, conf):
     selector.setSelectorType("percentile")
     selector.setPercentile(0.5)
     
-    model = selector.fit(df)
+    pipeline = Pipeline(stages=[selector])
+    model = pipeline.fit(df)
     
     print("Selector Type : %d" % selector.getPercentile())
     print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
     
     return model
 
+#create chiSquareSelector with fpr selector method
+
 def fprChiSqModel(df, conf):
+    '''
+        - input: - df [spark.dataFrame]
+                 - conf [configuration params]
+        - output: - generalized linear regression model [model]
+    '''
     label_col = conf["params"].get("labelCol")
     output_col = conf["params"].get("outputCol")
     features_col = conf["params"].get("featuresCol")
@@ -70,7 +92,8 @@ def fprChiSqModel(df, conf):
     selector.setSelectorType("fpr")
     selector.setFpr(0.5)
     
-    model = selector.fit(df)
+    pipeline = Pipeline(stages=[selector])
+    model = pipeline.fit(df)
     
     print("Selector Type : %d" % selector.getFpr())
     print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
@@ -88,10 +111,10 @@ def perTransformModel(dataFrame, conf):
 def fprTransformModel(dataFrame, conf):
     model = fprChiSqModel(dataFrame, conf)
     return model.transform(dataFrame)
-    
+
+#Save model into corresponding path    
 def saveModel(model,path):
     '''
-    Save model into corresponding path
     Input : - model
             - path
     Output : -saved model
@@ -99,10 +122,6 @@ def saveModel(model,path):
     '''
     model.save(path)
     return 
-
-def copyModel(model):
-    copy_model = model.copy(extra=None)
-    return copy_model
 
 #load chiSqSelector scaler
 def loadModel(path):
@@ -122,6 +141,10 @@ def loadData(path):
     model = ChiSqSelectorModel.load(path)
     return model
 
+def copyModel(model):
+    copy_model = model.copy(extra=None)
+    return copy_model
+
 # ----------------Testing and Example--------------------#
 
 if __name__ == "__main__" :
@@ -138,6 +161,12 @@ if __name__ == "__main__" :
     - numTopFeatures chooses a fixed number of top features 
     according to a chi-squared test.
     '''
+    #ChiSquareSelector model
+    #trained_model = numChiSqModel(df, "path")
+    
+    #Save model
+    #num_model = saveModel(trained_model, "path")
+    
     num_model = numTransformModel(df, conf)
     num_model.show()
     
@@ -146,16 +175,16 @@ if __name__ == "__main__" :
     - percentile is similar but chooses a fraction of all 
     features instead of a fixed number.
     '''
-    per_model = perTransformModel(df, conf)
-    per_model.show()
+    #per_model = perTransformModel(df, conf)
+    #per_model.show()
     
     '''
     - with fpr selection method
     - fpr chooses all features whose p-values are below a threshold, 
     thus controlling the false positive rate of selection.
     '''
-    fpr_model = fprTransformModel(df, conf)
-    fpr_model.show()
+    #fpr_model = fprTransformModel(df, conf)
+    #fpr_model.show()
             
     spark.stop()
 
