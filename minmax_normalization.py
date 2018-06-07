@@ -17,68 +17,81 @@ spark = SparkSession\
     .appName("MinMaxScalerExample")\
     .getOrCreate()
     
-  
+#config input example  
 config = {
             "min" : 0.0,
             "max" : 1.0,
             "withStd" : True,
             "inputCol" : "features",
             "outputCol" : "scaledFeatures"
-        }
+           }
 
-#fit data frame into minimum maximum model
-def minMaxScaler(dataFrame, conf):
+
+def minMaxScalerModel(df, conf):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: fitted model
+    input : spark-dataframe, conf
+    return value : model
     """
+    
     input = conf.get("inputCol", None)
     output = conf.get("outputCol", None)
     minimum = conf.get("min", 0.0)
     maximum = conf.get("max", 1.0)
     scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
                           outputCol = output)
-    model = scaler.fit(dataFrame)
-    return model
+    return scaler.fit(df)
+
+
 
 #transform fitted model into minimum maximum scaled model
-def transformModel(dataFrame, conf):
+def minMaxTransformData(model, df):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: scaled data frame
+        input : MinMaxScalerModel, spark-dataframe
+        return value : scaled data frame
     """
-    model = minMaxScaler(dataFrame, conf)
-    return model.transform(dataFrame)
+    return model.transform(df)
 
 #save minimum maximum scaler
-def saveModel(conf, path):
+def saveMinMaxScaler(scaler, path):
     """
-        input: configuration params for [MinMaxScaler], path
-        output: void
+    this function used for save the Scaler
+        input: scaler_model, path
+        return value: None
     """
-    input = conf.get("inputCol", None)
-    output = conf.get("outputCol", None)
-    minimum = conf.get("min", 0.0)
-    maximum = conf.get("max", 1.0)
-    scaler = MinMaxScaler(min = minimum, max = maximum, inputCol = input, 
-                          outputCol = output)
     scaler.save(path)
-    return
+   
+#save model (fitted scaler)
+def saveMinMaxScalerModel(model, path):
+    """
+        input: model, path
+        return value: None
+    """    
+    model.save(path)
 
-#load minimum maximum scaler
-def loadModel(path):
+#load the MinMax Scaler
+ def loadMinMaxScaler(path):
     """
         input: path
         output: scaler [MinMaxScaler]
     """
     scaler = MinMaxScaler.load(path)
+    return scaler   
+ 
+#load minimum MinMaxScaler Model
+def loadMinMaxScalerModel(path):
+    """
+        input: path
+        output: scaler [MinMaxScaler]
+    """
+    scaler = MinMaxScalerModel.load(path)
     return scaler
 
+
 #save minimum maximum model (data frame)
-def saveData(data, path, dataType):
+def saveMinMaxData(data, path, dataType):
     """
-        input: data [data frame], path, data type (string)
-        output: void
+        input: data [spark-dataframe], path, data type (string)
+        output: None
     """
     if (dataType == 'csv'):
         data.toPandas().to_csv(path)
@@ -95,8 +108,8 @@ def saveData(data, path, dataType):
         data.toPandas().to_csv(path)
     
 
-#load minimum maximum model
-def loadData(path):
+#load min-max data
+def loadMinMaxData(path):
     """
         input: path
         output: model [MinMaxScalerModel data frame]
@@ -109,6 +122,7 @@ def loadData(path):
 #--------------------------Testing and Example--------------------------#
 
 if __name__ == "__main__":
+    print (">>>=====(this is testing example)=====<<<")
 
     #create data frame        
     dataFrame = spark.createDataFrame([
@@ -118,7 +132,7 @@ if __name__ == "__main__":
     ], ["id", "features"])
         
     #normalize data frame by using min max normalization
-    model = transformModel(dataFrame, config)
+    model = minMaxTransformData(dataFrame, config)
 
     #showting normalized data
     model.select("features", "scaledFeatures").show()
@@ -127,4 +141,4 @@ if __name__ == "__main__":
     saveData(model, 'minmax_norm_example.csv', 'csv')
 
     #save model into desired path
-    saveModel(config,'minmax_norm_model')
+    saveModel('minmax_norm_model')
