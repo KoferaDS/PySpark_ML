@@ -1,8 +1,8 @@
 from __future__ import print_function
 from pyspark.ml.evaluation import RegressionEvaluator
-from pyspark.ml.tuning import CrossValidator,ParamGridBuilder,TrainValidationSplit
-from pyspark.ml.regression import RandomForestRegressor
-from pyspark.ml.regression import RandomForestRegressionModel
+from pyspark.ml.tuning import CrossValidator, ParamGridBuilder, TrainValidationSplit
+from pyspark.ml.tuning import CrossValidatorModel, TrainValidationSplitModel
+from pyspark.ml.regression import RandomForestRegressor, RandomForestRegressionModel
 from pyspark.ml import Pipeline
 from pyspark.ml.feature import VectorIndexer
 from pyspark.context import SparkContext
@@ -23,9 +23,9 @@ rfr_params = {
                 "featureSubsetStrategy" : "auto"
              }   
 
-# Set params tuning whether use : - method "crossval" or "trainvalsplit"
-#                                 - methodParams is set as fold for "crossval" (value : f>0)
-#                                   and trainratio for "trainvalsplit" (value: 0<tr<1)
+# Set params tuning : - method "crossval" or "trainvalsplit"
+#                     - methodParams is set as fold for "crossval" (value : f>0)
+#                       and trainratio for "trainvalsplit" (value: 0<tr<1)
 
 tuning_params = {
                     "method" : "trainvalsplit",
@@ -71,7 +71,8 @@ def randomforestRegression (df,conf):
     if conf["tuning"]:
         if conf["tuning"].get("method").lower() == "crossval":
             folds = conf["tuning"].get("methodParam", 4)
-# Set the hyperparameter that we want to grid, ex: maxDepth and numTrees
+        
+# Set the hyperparameter that we want to grid, in case: maxDepth and numTrees
             grid = ParamGridBuilder()\
                 .addGrid(rfr.maxDepth,[3,4,5])\
                 .addGrid(rfr.numTrees,[15,20])\
@@ -82,7 +83,8 @@ def randomforestRegression (df,conf):
             model = cv.fit(df)
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
             tr = conf["tuning"].get("methodParam", 0.8)
-# Set the hyperparameter that we want to grid, ex: maxDepth and numTrees
+       
+# Set the hyperparameter that we want to grid, in case: maxDepth and numTrees
             grid = ParamGridBuilder()\
                 .addGrid(rfr.maxDepth,[3,4,5])\
                 .addGrid(rfr.numTrees,[15,20])\
@@ -109,7 +111,16 @@ def loadModel(path):
        Input  : -Path
        Output : -Loaded model
     '''
-    model = RandomForestRegressionModel.load(path)
+  # Loaded model if use crossvalidation tuning
+    if config["tuning"].get("method") == "crossval" :
+        model = CrossValidatorModel.load(path)   
+  # Loaded model if use trainvalidationsplit tuning
+    elif config["tuning"].get("method") == "trainval":
+        model = TrainValidationSplitModel.load(path)
+  # Loaded model if use pipeline (non-tuning)
+    elif config["tuning"].get("method") == None:
+        model = PipelineModel.load(path)
+        
     return model
 
 
@@ -129,6 +140,14 @@ def prediction (df,model):
         Output :  -Dataframe display with prediction column (transformed)
     """
     model.transform(df).show()
+   
+def summary_validationMetrics(model):
+    """ Validation metrics value
+        input : - trained model
+        ouput : - validation metrics value
+    """
+    vm = model.validationMetrics
+    return vm
 
 def summary_R2(df):
     """ Root square value from the model
@@ -162,7 +181,7 @@ df_rfr = spark.read.format("libsvm")\
             .load("D:\Kofera\spark-master\data\mllib\sample_libsvm_data.txt")    
     
 #     Splitting dataframe into dataframe training and test
-#     ex: 0.7 (70%) datainput used as df training and 0.3 (30%) used as df test
+#     ex: df ratio df_training:df_test = 7:3
 (df_training, df_test) = df_rfr.randomSplit([0.7, 0.3])
 
 #     Automatically identify categorical features, and index them.
@@ -178,10 +197,8 @@ trained_model = randomforestRegression(df_training,conf1)
 ##Save model
 #save = saveModel(trained_model, "path")
 
-##Load model
-#load_irmodel = loadIsotonicRegression("path")
-#load_cvmodel = loadCrossValidation("path")
-#load_tvsmodel = loadTrainValidationSplit("path")
+#Load model
+loaded_model = loadModel("path")
 
 # Prediction
 testing = predict(df_test,trained_model)
@@ -190,6 +207,9 @@ testing.show()
 # Root square
 r2      = summary_R2(testing)  
 r2.show() 
-## Root mean square
+# Root mean square
 rmse    = summary_Rmse(testing)  
 rmse.show()
+# Validation Metrics
+vm = summary_validationMetrics(trained_model)
+vm.show()
