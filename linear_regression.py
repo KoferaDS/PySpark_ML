@@ -193,7 +193,7 @@ def rowSlicing(df, n):
 
 
 
-
+#--------------------------Test dan Contoh Penggunaan--------------------------#
 #load input data
 linear_df = spark.read.format("libsvm")\
         .load("C:/Users/Lenovo/spark-master/data/mllib/sample_linear_regression_data.txt")
