@@ -42,7 +42,7 @@ grid = {
 }
 
 # tuning params
-# methods: Cross Validation ("crossval") and Train Validation Split 
+# methods: Cross Validation ("crossval") and Train Validation Split
 #         ("trainvalsplit")
 # methodParam: crossval -> integer
 #              trainval -> float, range 0.0 - 1.0
