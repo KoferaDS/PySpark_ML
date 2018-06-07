@@ -23,10 +23,10 @@ config = {
         }
 
 #fit data frame into standard model
-def standardScaler(dataFrame,conf):
+def standardScalerModel(df, conf):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: fitted model
+        input: spark-dataFrame, conf [configuration params]
+        return value: model
     """
     mean = conf.get("withMean", False)
     std = conf.get("withStd", True)
@@ -38,44 +38,50 @@ def standardScaler(dataFrame,conf):
     return model
 
 #transform fitted model into standard scaled model
-def transformModel(dataFrame, conf):
+def standardTransformData(model, dataFrame):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: scaled data frame
+        input: standardScalerModel, spark-dataFrame
+        return value: scaled data frame
     """
-    model = standardScaler(dataFrame, conf)
-    transformed = model.transform(dataFrame)
-    return transformed
+    return model.transform(dataFrame)
 
 #save standard scaler
-def saveModel(conf, path):
+def saveStandardScaler(scaler, path):
     """
-        input: configuration params, path
-        output: void
+        input: standardScaler, path
+        return value: None
     """
-    mean = conf.get("withMean", False)
-    std = conf.get("withStd", True)
-    input = conf.get("inputCol", None)
-    output = conf.get("outputCol", None)
-    scaler = StandardScaler(inputCol = input, outputCol = output, 
-                            withMean = mean, withStd = std)
     scaler.save(path)
-    return
+
+#save standard scaler model
+def saveStandardScalerModel(model, path):
+    """
+        input: standardScalerModel, path
+        return value: None
+    """
+    model.save(path)
 
 #load standard scaler
-def loadModel(path):
+def loadStandardScaler(path):
     """
         input: path
-        output: scaler [StandardScaler]
+        return value: scaler [StandardScaler]
     """
-    scaler = StandardScaler.load(path)
-    return scaler
+    return StandardScaler.load(path)
+
+#load standard scaler model
+def loadStandardScalerModel(path):
+    """
+        input: path
+        return value: model [StandardScalerModel]
+    """
+    return StandardScalerModel.load(path)
 
 #save standard model (data frame)
-def saveData(data, path, dataType):
+def saveStandardData(data, path, dataType):
     """
         input: data [data frame], path, data type (string)
-        output: void
+        return value: void
     """
     if (dataType == 'csv'):
         data.toPandas().to_csv(path)
@@ -91,14 +97,14 @@ def saveData(data, path, dataType):
         print("Setting defaults to csv")
         data.toPandas().to_csv(path)
 
-#load standard model
-def loadData(path):
+#load data frame
+def loadStandardData(path):
     """
         input: path
-        output: model [StandardScalerModel data frame]
+        output: df [data frame]
     """
-    model = StandardScalerModel.load(path)
-    return model
+    df = spark.read.format("libsvm").load(path)
+    return df
 
 
 
@@ -114,14 +120,26 @@ if __name__ == "__main__":
         (2, Vectors.dense([4.0, 10.0, 8.0]),)
     ], ["id", "features"])
         
-    #normalize data frame by using standard normalization
-    model = transformModel(dataFrame, config)
+    #create standard normalization model
+    model = standardScalerModel(dataFrame, config)
 
-    #showting normalized data
-    model.select("features", "scaledFeatures").show()
+    #normalize data frame by using standard normalization
+    data = standardTransformData(model, dataFrame)
+
+    #showing normalized data
+    data.select("features", "scaledFeatures").show()
 
     #save data frame into desired path
-    saveData(model, 'standard_norm_example.csv', 'csv')
+    saveStandardData(data, 'standard_norm_example.csv', 'csv')
 
     #save model into desired path
-    saveModel(config,'standard_norm_model')
+    saveStandardScalerModel(model, 'standard_norm_model')
+
+    #load standard scaler model from desired path
+    model2 = loadStandardScalerModel('standard_norm_model')
+
+    #transform data from loaded model
+    data2 = standardTransformData(model2, dataFrame)
+
+    #showing normalized data
+    data2.select("features", "scaledFeatures").show()

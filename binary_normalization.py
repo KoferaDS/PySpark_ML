@@ -21,10 +21,10 @@ config = {
         }
 
 #create binary normalizer model
-def binaryScaler(dataFrame, conf):
+def binaryScalerModel(df, conf):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: fitted model
+        input: spark-dataFrame, conf [configuration params]
+        return value: model
     """
     input = conf.get("inputCol", None)
     output = conf.get("outputCol", None)
@@ -33,41 +33,34 @@ def binaryScaler(dataFrame, conf):
     return model
 
 #transform data from unfitted model into binary form
-def transformModel(dataFrame, conf):
+def binaryTransformData(model, df):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: binary normalized data frame
+        input: binaryScalerModel, spark-dataFrame
+        return value: scaled data frame
     """
-    model = binaryScaler(dataFrame, conf)
-    data = model.transform(dataFrame)
-    return data
+    return model.transform(dataFrame)
 
 #save binary scaler
-def saveModel(conf,path):
+def saveBinaryScaler(scaler, path):
     """
-        input: configuration params, path
-        output: void
+        input: binaryScalerModel, path
+        return value: None
     """
-    input = conf.get("inputCol", None)
-    output = conf.get("outputCol", None)
-    tres = conf.get("threshold", 0.0)
-    scaler = Binarizer(threshold = tres,inputCol = input, outputCol = output)
     scaler.save(path)
 
 #load binary scaler
-def loadModel(path):
+def loadBinaryScaler(path):
     """
         input: path
-        output: scaler [Binarizer]
+        return value: binaryScalerModel
     """
-    scaler = Binarizer.load(path)
-    return scaler
+    return Binarizer.load(path)
 
 #save binary model (data frame)
-def saveData(data, path, dataType):
+def saveBinaryData(data, path, dataType):
     """
         input: data [data frame], path, data type (string)
-        output: void
+        return value: void
     """
     if (dataType == 'csv'):
         data.toPandas().to_csv(path)
@@ -83,6 +76,14 @@ def saveData(data, path, dataType):
         print("Setting defaults to csv")
         data.toPandas().to_csv(path)
 
+#load data frame
+def loadBinaryData(path):
+    """
+        input: path
+        output: df [data frame]
+    """
+    df = spark.read.format("libsvm").load(path)
+    return df
 
 
 
@@ -97,14 +98,26 @@ if __name__ == "__main__":
         (2, 0.2)
     ], ["id", "features"])
         
-    #normalize data frame by using min max normalization
-    model = transformModel(dataFrame, config)
+    #create binary scaler model
+    model = binaryScalerModel(dataFrame, config)
+
+    #normalize data frame by using binary normalization
+    data = binaryTransformData(model, dataFrame)
 
     #showting normalized data
-    model.show()
+    data.show()
 
     #save data frame into desired path
-    saveData(model, 'binary_norm_example.csv', 'csv')
+    saveBinaryData(data, 'binary_norm_example.csv', 'csv')
 
     #save model into desired path
-    saveModel(config,'binary_norm_model')
+    saveBinaryScaler(model,'binary_norm_model')
+
+    #load binary scaler model from desired path
+    model2 = loadBinaryScaler('binary_norm_model')
+
+    #transform data from loaded model
+    data2 = binaryTransformData(model2, dataFrame)
+
+    #showing normalized data
+    data2.select("features", "binarizedFeatures").show()

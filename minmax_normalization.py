@@ -69,7 +69,7 @@ def saveMinMaxScalerModel(model, path):
     model.save(path)
 
 #load the MinMax Scaler
- def loadMinMaxScaler(path):
+def loadMinMaxScaler(path):
     """
         input: path
         output: scaler [MinMaxScaler]
@@ -108,14 +108,14 @@ def saveMinMaxData(data, path, dataType):
         data.toPandas().to_csv(path)
     
 
-#load min-max data
+#load data frame
 def loadMinMaxData(path):
     """
         input: path
-        output: model [MinMaxScalerModel data frame]
+        output: df [data frame]
     """
-    model = MinMaxScalerModel.load(path)
-    return model
+    df = spark.read.format("libsvm").load(path)
+    return df
     
 
 
@@ -131,14 +131,26 @@ if __name__ == "__main__":
         (2, Vectors.dense([3.0, 10.1, 3.0]),)
     ], ["id", "features"])
         
+    #create min max normalization model
+    model = minMaxScalerModel(dataFrame, config)
+    
     #normalize data frame by using min max normalization
-    model = minMaxTransformData(dataFrame, config)
+    data = minMaxTransformData(model, dataFrame)
 
     #showting normalized data
-    model.select("features", "scaledFeatures").show()
+    data.select("features", "scaledFeatures").show()
 
     #save data frame into desired path
-    saveData(model, 'minmax_norm_example.csv', 'csv')
+    saveMinMaxData(model, 'minmax_norm_example.csv', 'csv')
 
     #save model into desired path
-    saveModel('minmax_norm_model')
+    saveMinMaxScalerModel(model, 'minmax_norm_model')
+
+    #load min max scaler model from desired path
+    model2 = loadMinMaxScalerModel('minmax_norm_model')
+
+    #transform data from loaded model
+    data2 = minMaxTransformData(model2, dataFrame)
+
+    #showing normalized data
+    data2.select("features", "scaledFeatures").show()

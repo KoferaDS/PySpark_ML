@@ -22,52 +22,62 @@ config = {
         }
 
 #fit data frame into maximum absolute model
-def maxAbsScaler(dataFrame,conf):
+def maxAbsScalerModel(df, conf):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: fitted model
+        input: spark-dataFrame, conf [configuration params]
+        return value: model
     """
     inp = conf.get("inputCol", None)
     output = conf.get("outputCol", None)
     scaler = MaxAbsScaler(inputCol = inp, outputCol = output)
-    model = scaler.fit(dataFrame)
+    model = scaler.fit(df)
     return model
 
 #transform data from fitted model into maximum absolute scaled model
-def transformModel(dataFrame, conf):
+def maxAbsTransformData(model, df):
     """
-        input: dataFrame [spark.dataFrame], conf [configuration params]
-        output: model [scaled data frame]
+        input: maxAbsScalerModel, spark-dataFrame
+        return value: scaled data frame
     """
-    model = maxAbsScaler(dataFrame, conf)
-    return model.transform(dataFrame)
+    return model.transform(df)
 
 #save maximum absolute scaler
-def saveModel(conf, path):
+def saveMaxAbsScaler(scaler, path):
     """
-        input: configuration params, path
-        output: void
+        input: scaler_model, path
+        return value: None
     """
-    inp = conf.get("inputCol", None)
-    output = conf.get("outputCol", None)
-    scaler = MaxAbsScaler(inputCol = inp, outputCol = output)
     scaler.save(path)
-    return
+
+#save maximum absolute scaler
+def saveMaxAbsScalerModel(model, path):
+    """
+        input: model, path
+        return value: None
+    """
+    model.save(path)
 
 #load maximum absolute scaler
-def loadModel(path):
+def loadMaxAbsScaler(path):
     """
         input: path
-        output: scaler [MaxAbsScaler]
+        return value: scaler [MaxAbsScaler]
     """
-    scaler = MaxAbsScaler.load(path)
-    return scaler
+    return MaxAbsScaler.load(path)
+
+#load maximum absolute scaler model
+def loadMaxAbsScalerModel(path):
+    """
+        input: path
+        return value: model [MaxAbsScalerModel]
+    """
+    return MaxAbsScalerModel.load(path)
 
 #save maximum absolute model (data frame)
-def saveData(data, path, dataType):
+def saveMaxAbsData(data, path, dataType):
     """
         input: data [data frame], path, data type (string)
-        output: void
+        return value: void
     """
     if (dataType == 'csv'):
         data.toPandas().to_csv(path)
@@ -83,14 +93,14 @@ def saveData(data, path, dataType):
         print("Setting defaults to csv")
         data.toPandas().to_csv(path)
 
-#load maximum absolute model
-def loadData(path):
+#load data frame
+def loadMaxAbsData(path):
     """
         input: path
-        output: model [MaxAbsScalerModel data frame]
+        output: df [data frame]
     """
-    model = MaxAbsScalerModel.load(path)
-    return model
+    df = spark.read.format("libsvm").load(path)
+    return df
     
 
 
@@ -99,6 +109,7 @@ def loadData(path):
 #--------------------------Testing and Example--------------------------#
 
 if __name__ == "__main__":
+    print(">>>=====(this is testing example)=====<<<")
 
     #create data frame        
     dataFrame = spark.createDataFrame([
@@ -107,14 +118,26 @@ if __name__ == "__main__":
         (2, Vectors.dense([4.0, 10.0, 8.0]),)
     ], ["id", "features"])
         
-    #normalize data frame by using min max normalization
-    model = transformModel(dataFrame, config)
+    #create max absolute normalization model
+    model = maxAbsScalerModel(dataFrame, config)
 
-    #showting normalized data
-    model.select("features", "scaledFeatures").show()
+    #normalize data frame by using max absolute normalization
+    data = maxAbsTransformData(model, dataFrame)
+
+    #showing normalized data
+    data.select("features", "scaledFeatures").show()
 
     #save data frame into desired path
-    saveData(model, 'maxabs_norm_example.csv', 'csv')
+    saveMaxAbsData(data, 'maxabs_norm_example.csv', 'csv')
 
     #save model into desired path
-    saveModel(config,'maxabs_norm_model')
+    saveMaxAbsScalerModel(model,'maxabs_norm_model')
+
+    #load max absolute scaler model from desired path
+    model2 = loadMaxAbsScalerModel('maxabs_norm_model')
+    
+    #transform data from loaded model
+    data2 = maxAbsTransformData(model2, dataFrame)
+    
+    #showing normalized data
+    data2.select("features", "scaledFeatures").show()
