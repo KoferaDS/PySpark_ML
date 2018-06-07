@@ -21,10 +21,24 @@ spark = SparkSession(sc)
 grid = { "maxIter" : [15, 20, 25], "maxDepth" : [3,4]}
 
 
-#parameter regresi gbt
+#paramter regresi gbt
 gbt_params = {
                     "maxIter" : 20, 
-                    "maxDepth" : 3
+                    "maxDepth" : 3,
+                    "featuresCol" : "features", 
+                    "labelCol" : "label", 
+                    "predictionCol" : "prediction", 
+                    "maxBins" : 32,
+                    "minInstancesPerNode" : 1, 
+                    "minInfoGain" : 0.0, 
+                    "maxMemoryInMB" : 256, 
+                    "cacheNodeIds" : False, 
+                    "subsamplingRate"  : 1.0, 
+                    "checkpointInterval" : 10, 
+                    "lossType" : "squared", 
+                    "stepSize"  : 0.1, 
+                    "seed" : None, 
+                    "impurity" : "variance"
                 }
 
 #tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
@@ -65,7 +79,7 @@ def gbtRegressor(df, conf):
     maxBin = conf["params"].get("maxBins", 32)
     minInstancesPerNode = conf["params"].get("minInstancesPerNode", 1)
     minInfoGain = conf ["params"].get("minInfoGain", 0.0)
-    maxMemoryInMB = conf["params"].get("maxMemoryInMB", 256)
+    maxMemoryInMB = conf["params"].get("maxMemoryInMB",256)
     cacheNodeIds = conf["params"].get("cacheNodeIds", False)
     subsamplingRate= conf["params"].get("subsamplingRate", 1.0)
     checkpointInterval = conf["params"].get("checkpointInterval", 10)
@@ -119,23 +133,40 @@ def gbtRegressor(df, conf):
 
 #Menampilkan tree model (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
 def gbtModel(model):
+    """input : model (PipelineModel/ GBTModel)
+       output  : depth dan nodes tree 
+    """
     gbModel = model.stages[1]
     return gbModel    
 
 
-#Menampilkan validator metrics (ket : dapat dipanggil jika menggunakan ML-Tuning)
+#Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
+    """input : model (CrossValidatorModel / TrainValidationSplitModel)
+       output : validation metrics 
+    """
+    
     vm = model.validationMetrics
     return vm
 
 
 #Save Model
 def saveModel(model, path):
+    """input : model 
+                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+       output : void
+    """
+    
     model.save(path)
+    return
 
 
 #Load Model (jika tidak menggunakan ML-tuning = conf1, jika menggunakan ML-tuning = conf2 )
 def loadModel(conf, path):
+    """input : conf, path
+       output : model
+                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+    """
     
     #Jika menggunakan ML-Tuning
     if conf["tuning"]:    
@@ -146,12 +177,11 @@ def loadModel(conf, path):
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
             loading_model = TrainValidationSplitModel.load(path)
     
-    #Jika tidak menggunakan ML-tuning, tipe model = LinearRegressionModel    
+    #Jika tidak menggunakan ML-tuning, tipe model = PipelineModel    
     elif conf["tuning"] == None:
         loading_model = PipelineModel.load(path)
     
     return loading_model
-
 
 #Fungsi untuk melakukan prediksi dengan menggunakan trained model
 def predict(df, model):
