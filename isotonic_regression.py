@@ -1,17 +1,16 @@
 from __future__ import print_function
 from pyspark.ml.evaluation import RegressionEvaluator
-from pyspark.ml.tuning import CrossValidator,ParamGridBuilder, TrainValidationSplit
 from pyspark.ml.regression import IsotonicRegression
 from pyspark.ml.regression import IsotonicRegressionModel
 from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.ml.linalg import Vectors
-from pyspark.sql import Row
+
 
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)  
-
-#    Set parameter and its value for Isotonic Regression
+ 
+#Set isotonic parameter
 isotonic_params = {
                     "predictionCol" : "prediction",
                     "labelCol" : "label",
@@ -19,61 +18,24 @@ isotonic_params = {
                     "weightCol" : "weight",
                     "isotonic" : True,
                     "featureIndex" : 0
-                  }  
-
-#    Set params tuning : - method "crossval" or "trainvalsplit" to train data
-#                        - methodParams is set as fold for "crossval" (value : f>0)
-#                          and trainratio for "trainvalsplit (value: 0<tr<1)
-tune_params = {
-                "method" : "trainvalsplit",
-                "methodParams" : 5
-              }
-
-#    Set configuration whether use tuning/non-tuning
-conf1   =  {
-                "params" : isotonic_params,
-                "tuning" : None
-            }
-
-conf2  =   {
-                "params" : isotonic_params,
-                "tuning" : tune_params
-           }
+                  }            
 
 def isotonicRegression(df, conf):
   """ Isotonic Regression training
         Input  : - Dataframe of training (df)
-                 - Tuning and hiperparameter configuration (conf)
         output : - Isotonic regression model (model)
   """
   feature_col = conf["params"].get("featuresCol", "features")
   label_col = conf["params"].get("labelCol", "label")
   pred_col = conf["params"].get("predictionCol", "prediction")
-  weight_col = conf["params"].get["weightCol", "weight")
-  isoton = conf["params"].get("isotonic", True)
-  feature_index = conf["params"].get("featureIndex", 0)
+  isoton = conf["params"].get("isotonic",True)
+  feature_index = conf["params"].get("featureIndex",0)
       
   ir = IsotonicRegression(featuresCol=feature_col,labelCol=label_col,
                           predictionCol=pred_col, isotonic=isoton, 
                           featureIndex=feature_index)
 
-  if conf["tuning"]:
-    if conf["tuning"].get("method").lower() == "crossval":
-      folds = conf["tuning"].get("methodParam", 2)
-      pg = ParamGridBuilder().build()
-      evaluator = RegressionEvaluator(metricName = "r2")
-      cv = CrossValidator(estimator=ir, estimatorParamMaps=pg,
-                          evaluator=evaluator, numFolds=folds)
-      model = cv.fit(df)
-    elif conf["tuning"].get("method").lower() == "trainvalsplit":
-      tr = conf["tuning"].get("methodParam", 0.8)
-      pg = ParamGridBuilder().build()
-      evaluator = RegressionEvaluator(metricName = "r2")
-      tvs = TrainValidationSplit(estimator=ir, estimatorParamMaps=pg,
-                                 evaluator=evaluator, trainRatio=tr)
-      model = tvs.fit(df)
-  elif conf["tuning"] ==  None:
-    model = ir.fit(df)
+  model = ir.fit(df)
   return model
 
 def saveModel(model,path):
@@ -84,8 +46,8 @@ def saveModel(model,path):
     '''
     model.save(path)
     return
-  
-def loadzmodel(path):
+
+def loadisotonicRegression(path):
     '''Loading model from path.
        Input  : - Path
        Output : - Loaded model
@@ -142,29 +104,28 @@ def copyModel(model):
 df_isoton = spark.read.format("libsvm")\
             .load("D:\Kofera\spark-master\data\mllib\sample_isotonic_regression_libsvm_data.txt")    
     
-    # Splitting dataframe into dataframe training and test, 
-    # ex: 0.6 (60 datainput used as df training and 0.4 used as df test
+#     Splitting dataframe into dataframe training and test 
+#     incase: ratio df_training:df_test = 6:4
 df_training, df_test = df_isoton.randomSplit([0.6, 0.4], seed=11)
 df_training.cache()
    
-    # Applied methods to Data
+#     Applied methods to Data
 # IR Model
-trained_model = isotonicRegression(df_training,conf2)
+trained_model = isotonicRegression(df_training,isotonic_params)
 
-##Save model
-#save = saveModel(trained_model, "path")
+#Save model
+saved_model = saveModel(trained_model, "path")
 
-##Load model
-#load_model = loadModel("path")
+#Load model
+loaded_model = loadisotonicRegression("path")
 
 # Prediction
 testing = predict(df_test,trained_model)
 testing.show()
 
 # Root square
-r2      = summary_R2(testing, "prediction", "label")  
+r2      = summary_R2(testing)  
 r2.show() 
-
 # Root mean square
-rmse    = summary_Rmse(testing,"prediction", "label")  
+rmse    = summary_Rmse(testing)  
 rmse.show()
