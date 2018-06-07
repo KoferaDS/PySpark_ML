@@ -16,6 +16,18 @@ from pyspark.ml.evaluation import RegressionEvaluator
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)
 
+#Parameter Configuration 
+config       =  {
+                 "params" : {"maxDepth" : 3, "featuresCol":"features", "labelCol":"label", 
+                             "predictionCol" : "prediction"},
+                             
+                 #tuning method = None, jika tidak menggunakan ML-Tuning
+                 #tuning method = crossval, jika menggunakan ML-Tuning Cross Validation
+                 #tuning method = trainval, jika menggunakan ML-Tuning Train Validation Split
+                 "tuning" : {"method" : "trainval" , "methodParam" : 0.8}
+                 }
+
+
 
 #Fungsi untuk mendapatkan model dari data (trained model)
 def dtRegressor(df, conf):
@@ -138,7 +150,7 @@ def row_slicing(df, n):
 
 
 
-
+#--------------------------Test dan Contoh Penggunaan--------------------------#
 
 #Dataframe input
 df = spark.read.format("libsvm").load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")
@@ -150,19 +162,6 @@ featureIndexer =\
 
 #Mencacah dataframe menjadi train dan test data dengan ratio 70% train data, 30% test data
 (train, test) = df.randomSplit([0.7, 0.3])
-
-
-#Parameter Configuration 
-config       =  {
-                 "params" : {"maxDepth" : 3, "featuresCol":"features", "labelCol":"label", 
-                             "predictionCol" : "prediction"},
-                             
-                 #tuning method = None, jika tidak menggunakan ML-Tuning
-                 #tuning method = crossval, jika menggunakan ML-Tuning Cross Validation
-                 #tuning method = trainval, jika menggunakan ML-Tuning Train Validation Split
-                 "tuning" : {"method" : "trainval" , "methodParam" : 0.8}
-                 }
-
 
 
 #mendapatkan model menggunakan fungsi dtRegressor, dengan train data.
