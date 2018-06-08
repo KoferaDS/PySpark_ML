@@ -7,6 +7,8 @@ from pyspark.ml.feature import Binarizer
 
 from pyspark.sql import SparkSession
 
+import re
+
 #configurations
 
 spark = SparkSession\
@@ -82,7 +84,17 @@ def loadBinaryData(path):
         input: path
         output: df [data frame]
     """
-    df = spark.read.format("libsvm").load(path)
+    if (path.lower().find(".txt") != -1):
+        df = spark.read.format("libsvm").load(path)
+    elif (path.lower().find(".csv") != -1):
+        df = spark.read.format("csv").option("header", "true").load(path)
+    elif (path.lower().find(".json") != -1):
+        df = spark.read.json(path)
+    elif (path.lower().find(".md") != -1):
+        df = spark.read.textFile(path)
+    else:
+        print("Unsupported yet.")
+
     return df
 
 
