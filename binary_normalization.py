@@ -7,8 +7,6 @@ from pyspark.ml.feature import Binarizer
 
 from pyspark.sql import SparkSession
 
-import re
-
 #configurations
 
 spark = SparkSession\

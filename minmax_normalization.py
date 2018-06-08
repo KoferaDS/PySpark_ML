@@ -21,7 +21,6 @@ spark = SparkSession\
 config = {
             "min" : 0.0,
             "max" : 1.0,
-            "withStd" : True,
             "inputCol" : "features",
             "outputCol" : "scaledFeatures"
            }

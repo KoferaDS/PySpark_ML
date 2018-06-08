@@ -48,9 +48,9 @@ grid = {
 #              trainval -> float, range 0.0 - 1.0
 
 tune_params = {
-    "method": "trainvalsplit",
+    "method": "crossval",
     "paramGrids": grid,
-    "methodParam": 0.8
+    "methodParam": 2
 }
 
 # used without tuning
@@ -119,7 +119,7 @@ def generalizedLinearRegressor(dataFrame, conf):
     # with tuning
     if conf["tuning"]:
         # method: cross validation
-        if conf["tuning"].get["method"].lower() == "crossval":
+        if conf["tuning"].get("method").lower() == "crossval":
             paramGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
             for key in paramGrids:
@@ -152,6 +152,22 @@ def generalizedLinearRegressor(dataFrame, conf):
         model = glr.fit(dataFrame)
 
     return model
+
+# show validator metrics (if ML tuning is used)
+def validatorMetrics(model):
+    """
+        input: model [TrainValidationSplitModel]
+        output: validation metrics [double]
+    """
+    return model.validationMetrics
+
+# show average metrics from CrossValidator model
+def averageMetrics(model):
+    """
+        input: model [CrossValidatorModel]
+        output: metrics [double]
+    """
+    return model.avgMetrics
 
 # saving model
 def saveModel(model, path):
@@ -227,7 +243,7 @@ if __name__ == "__main__":
     training.cache()
     
     # create generalized linear regression model
-    model = generalizedLinearRegressor(dataset, conf1)
+    model = generalizedLinearRegressor(dataset, conf2)
     
     # create data prediction
     testing = predict(test, model)
@@ -247,7 +263,7 @@ if __name__ == "__main__":
     saveModel(model, "generalized_linear_regression_model_example")
     
     # load model from desired path
-    model2 = loadModel(conf1, "generalized_linear_regression_model_example")
+    model2 = loadModel(conf2, "generalized_linear_regression_model_example")
     
     # show top 10 results from loaded model
     testing2 = predict(test, model2)
