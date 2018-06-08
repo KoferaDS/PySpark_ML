@@ -18,9 +18,9 @@ param = {
         }
 
 num_config = {
-        "numTopFeatures" : 3,
-        "percentile" : 0.5,
-        "fpr" : 0.5
+        "numTopFeatures" : 2,
+        "percentile" : 0.1,
+        "fpr" : 0.1
         }
 
 config = {
@@ -100,16 +100,7 @@ def fprChiSqModel(df, conf):
     
     return model
 
-def numTransformModel(dataFrame, conf):
-    model = numChiSqModel(dataFrame, conf)
-    return model.transform(dataFrame)
-
-def perTransformModel(dataFrame, conf):
-    model = perChiSqModel(dataFrame, conf)
-    return model.transform(dataFrame)
-
-def fprTransformModel(dataFrame, conf):
-    model = fprChiSqModel(dataFrame, conf)
+def transformModel(dataFrame, model):
     return model.transform(dataFrame)
 
 #Save model into corresponding path    
@@ -123,18 +114,8 @@ def saveModel(model,path):
     '''
     model.save(path)
 
-#load chiSqSelector selector
-def loadModel(path):
-    '''
-        Loading model from path
-        input : - path  
-        output : - loaded model
-    '''
-    selector = ChiSqSelector.load(path)    
-    return selector
-
 #load chiSqSelector model
-def loadData(path):
+def loadModel(path):
     '''
         input : - path
         output: - model [ChiSqSelectorModel data frame]
@@ -157,38 +138,36 @@ if __name__ == "__main__" :
             (9, Vectors.dense([1.0, 0.0, 15.0, 0.1]), 0.0,)],
             ["id", "features", "clicked"])
     
-    '''
-    - with numTopFeatures selection method
-    - numTopFeatures chooses a fixed number of top features 
-    according to a chi-squared test.
-    '''
     #ChiSquareSelector model
     #trained_model = numChiSqModel(df, "path")
     
     #Save model
     #num_model = saveModel(trained_model, "path")
-          
-    print(numChiSqModel(df, config))
-    num_model = numTransformModel(df, config)
-    print(num_model)
-    num_model.show()
     
+    '''
+    - with numTopFeatures selection method
+    - numTopFeatures chooses a fixed number of top features 
+    according to a chi-squared test.
+    '''
+    num = numChiSqModel(df, config)
+    print(transformModel(df, num))
+    transformModel(df, num).show()
     
     '''
     - with percentile selection method
     - percentile is similar but chooses a fraction of all 
     features instead of a fixed number.
     '''
-    #per_model = perTransformModel(df, config)
-    #per_model.show()
+    #per = perChiSqModel(df, config)
+    #transformModel(df, per).show()
     
     '''
     - with fpr selection method
     - fpr chooses all features whose p-values are below a threshold, 
     thus controlling the false positive rate of selection.
     '''
-    #fpr_model = fprTransformModel(df, config)
-    #fpr_model.show()
+    #fpr = fprChiSqModel(df, config)
+    #transformModel(df, fpr).show()
             
     spark.stop()
 
