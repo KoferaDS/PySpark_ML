@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-
+        
 from __future__ import print_function
 
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml.linalg import Vectors
-from pyspark.ml import Pipeline
 from pyspark.ml.feature import ChiSqSelector, ChiSqSelectorModel
 
 sc = SparkContext.getOrCreate()
@@ -18,10 +17,15 @@ param = {
         "outputCol" : "selectedFeatures"
         }
 
-conf = {
+num_config = {
+        "numTopFeatures" : 3,
+        "percentile" : 0.5,
+        "fpr" : 0.5
+        }
+
+config = {
         "params" : param,
-        "selectedType" : 
-            ["numTopFeatures", "percentile", "fpr"]
+        "selectedType" : num_config
         }
     
 #create chiSquareSelector with numTopFeatures selector method    
@@ -39,13 +43,12 @@ def numChiSqModel(df, conf):
                              outputCol=output_col, labelCol=label_col)
     
     selector.setSelectorType("numTopFeatures")
-    selector.setNumTopFeatures(3)
+    selector.setNumTopFeatures(conf["selectedType"].get("numTopFeatures"))
     
-    pipeline = Pipeline(stages=[selector])
-    model = pipeline.fit(df)
+    model = selector.fit(df)
     
-    print("Selector Type : %s " % selector.getSelectorType())
-    print("ChiSqSelector output with top %d features selected" % selector.getNumTopFeatures())
+    #print("Selector Type : %s " % selector.getSelectorType())
+    #print("ChiSqSelector output with top %d features selected" % selector.getNumTopFeatures())
     
     return model
 
@@ -64,18 +67,16 @@ def perChiSqModel(df, conf):
                              outputCol=output_col, labelCol=label_col)
     
     selector.setSelectorType("percentile")
-    selector.setPercentile(0.5)
+    selector.setPercentile(conf["selectedType"].get("percentile"))
     
-    pipeline = Pipeline(stages=[selector])
-    model = pipeline.fit(df)
+    model = selector.fit(df)
     
-    print("Selector Type : %d" % selector.getPercentile())
-    print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
+    #print("Selector Type : %d" % selector.getPercentile())
+    #print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
     
     return model
 
 #create chiSquareSelector with fpr selector method
-
 def fprChiSqModel(df, conf):
     '''
         - input: - df [spark.dataFrame]
@@ -90,13 +91,12 @@ def fprChiSqModel(df, conf):
                              outputCol=output_col, labelCol=label_col)
     
     selector.setSelectorType("fpr")
-    selector.setFpr(0.5)
+    selector.setFpr(conf["selectedType"].get("fpr"))
     
-    pipeline = Pipeline(stages=[selector])
-    model = pipeline.fit(df)
+    model = selector.fit(df)
     
-    print("Selector Type : %d" % selector.getFpr())
-    print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
+    #print("Selector Type : %d" % selector.getFpr())
+    #print("ChiSqSelector output with top %s features selected" % selector.getSelectorType())
     
     return model
 
@@ -115,22 +115,23 @@ def fprTransformModel(dataFrame, conf):
 #Save model into corresponding path    
 def saveModel(model,path):
     '''
+    Save model into corresponding path
     Input : - model
             - path
     Output : -saved model
         
     '''
     model.save(path)
-    return 
 
-#load chiSqSelector scaler
+#load chiSqSelector selector
 def loadModel(path):
     '''
+        Loading model from path
         input : - path  
-        output : - model [chiSqSelector]
+        output : - loaded model
     '''
-    scaler = ChiSqSelector.load(path)    
-    return scaler
+    selector = ChiSqSelector.load(path)    
+    return selector
 
 #load chiSqSelector model
 def loadData(path):
@@ -166,16 +167,19 @@ if __name__ == "__main__" :
     
     #Save model
     #num_model = saveModel(trained_model, "path")
-    
-    num_model = numTransformModel(df, conf)
+          
+    print(numChiSqModel(df, config))
+    num_model = numTransformModel(df, config)
+    print(num_model)
     num_model.show()
+    
     
     '''
     - with percentile selection method
     - percentile is similar but chooses a fraction of all 
     features instead of a fixed number.
     '''
-    #per_model = perTransformModel(df, conf)
+    #per_model = perTransformModel(df, config)
     #per_model.show()
     
     '''
@@ -183,7 +187,7 @@ if __name__ == "__main__" :
     - fpr chooses all features whose p-values are below a threshold, 
     thus controlling the false positive rate of selection.
     '''
-    #fpr_model = fprTransformModel(df, conf)
+    #fpr_model = fprTransformModel(df, config)
     #fpr_model.show()
             
     spark.stop()
