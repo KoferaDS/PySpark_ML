@@ -17,6 +17,8 @@ def hiperAdapter(hiperparameter):
     Fungsi ini untuk menyesuaikan config 
     yang tidak lengkap
     ke defaultnya.
+    Input: User hiperparameter setting
+    Output: library of hiperparameter with the default
     '''
     hiperparameter_default = {'featuresCol':"features", 
           'predictionCol':"prediction", 
@@ -56,16 +58,7 @@ def train(df,hiperparameter):
     model = k_means.fit(df)
     return model
 
-def dfHasil(model):
-    '''
-    Returning dataframe with its cluster as one of the columns.
-    Input:  trained model
-    Output: dataframe dengan colom features dan prediction
-    '''
-    df_hasil = model.summary.predictions
-    return df_hasil
-
-def dfCluster(model):
+def summaryCluster(model):
     '''
     Returning the cluster of every data, just one column(prediction).
     Input:  trained model
@@ -74,7 +67,7 @@ def dfCluster(model):
     df_cluster = model.summary.cluster
     return df_cluster
 
-def dfClusterSize(model):
+def summaryClusterSize(model):
     '''
     Returning the number or size of each cluster.
     Input:  trained model
@@ -87,7 +80,16 @@ def dfClusterSize(model):
     df_cluster_sizes = spark.createDataFrame(cluster, ["Cluster Sizes"])
     return df_cluster_sizes
 
-def dfPredict(df, model, featuresCol = 'features', predictionCol = 'prediction'):
+def summaryResult(model):
+    '''
+    Returning dataframe with its cluster as one of the columns.
+    Input:  trained model
+    Output: dataframe dengan colom features dan prediction
+    '''
+    df_hasil = model.summary.predictions
+    return df_hasil
+
+def predictDF(df, model, featuresCol = 'features', predictionCol = 'prediction'):
     '''
     Returning dataframe with the coresponding cluster of each data.
     Input:  - model
@@ -110,6 +112,16 @@ def saveModel(model,path):
     model.save(path)
     return
 
+def copyModel(model):
+    '''
+    Creates a copy of this instance with the same uid 
+    and some extra params. This implementation first calls 
+    Params.copy and then make a copy of the companion Java pipeline component with extra params. So both the Python wrapper 
+    and the Java pipeline component get copied.
+    '''
+    copy_model = model.copy(extra=None)
+    return copy_model
+
 def loadModel(path):
     '''
     Loading model from path.
@@ -119,7 +131,7 @@ def loadModel(path):
     model = KMeansModel.load(path)
     return model
     
-def dfCostDistance(model, df):
+def costDistanceDF(model, df):
     '''
     Return the K-means cost (sum of squared distances of points 
     to their nearest center) for this model on 
@@ -135,7 +147,7 @@ def dfCostDistance(model, df):
     df_cost = spark.createDataFrame(cost, ["Cost"])
     return df_cost
 
-def dfClusterCenter(model):
+def clusterCenterModel(model):
     '''
     Returning cluster center of the model.
     Input:  model
@@ -148,16 +160,16 @@ def dfClusterCenter(model):
     df_cluster = spark.createDataFrame(vals, ["Centers"])
     return df_cluster
 
-def kNumber(model):
-    k = model.summary.k
-    k = [(Vectors.dense(k),)]
-    df_k = spark.createDataFrame(k, ["k"])
-    return df_k
-    
-def copyModel(model):
-    copy_model = model.copy(extra=None)
-    return copy_model
-
+def paramsExplanation(model):
+    '''
+    Input: model
+    Output: string of explanation of hyperparameter involved
+    '''
+    param_exp = model.extractParamMap()
+    param_exp = [(param_exp,)]
+    df_param_exp = spark.createDataFrame(param_exp, ["Parameter explanation of the model"])
+    return df_param_exp
+#
 ## =============================================================================
 ## Test and examples
 ## =============================================================================
@@ -176,28 +188,40 @@ def copyModel(model):
 #          'predictionCol':"prediction", 
 #          'k':3}
 #
+#print("1===========hiperAdapter=============")
 #hiperparameter = hiperAdapter(config)
+#print(hiperparameter)
+#print("2===========train=============")
 #trained_model = train(df, hiperparameter)
+#
+#print("3===========saveModel=============")
+#
+#print("4===========loadModel=============")
 #model = loadModel('kmeans_test')
+#
+#print("5===========c_model=============")
 #c_model = copyModel(trained_model)
-#hasil = dfHasil(trained_model)
-#print("==========hasil==============")
-#hasil.show()
-#cluster = dfCluster(trained_model)
-#print("===========cluster=============")
+#
+#print("6===========summaryCluster=============")
+#cluster = summaryCluster(trained_model)
 #cluster.show()
-#cluster_size = dfClusterSize(trained_model)
-#print("==========cluster_size==============")
+#
+#print("7==========summaryClusterSize==============")
+#cluster_size = summaryClusterSize(trained_model)
 #cluster_size.show()
-#predik = dfPredict(df2,model)
-#print("==========predik==============")
+#print("11==========summaryHasil==============")
+#hasil = summaryResult(trained_model)
+#hasil.show()
+#
+#print("12==========predik==============")
+#predik = predictDF(df2,model)
 #predik.show()
-#cluster_center = dfClusterCenter(model)
-#print("===========cluster_center=============")
+#
+#cluster_center = clusterCenterModel(model)
+#print("13===========cluster_center=============")
 #cluster_center.show()
-#cost = dfCostDistance(model, df)
-#print("===========cost=============")
+#
+#cost = costDistanceDF(model, df)
+#print("14===========cost=============")
 #cost.show()
-#print("===========k=============")
-#k = kNumber(trained_model)
-#k.show()
+#
