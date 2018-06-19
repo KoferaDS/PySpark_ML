@@ -57,7 +57,8 @@ conf2 = {
 
 #Membuat model menggunakan regresi linear (dari data training)
 def linearRegressor(df, conf):
-    """ input : df [spark.dataframe], conf [configuration params]
+    """ 
+        input : df [spark.dataframe], conf [configuration params]
         output : linear_regression model [model]
     """
     #memanggil parameter (nilai default)
@@ -124,17 +125,18 @@ def linearRegressor(df, conf):
 
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
-    """input : model (TrainValidationSplitModel)
+    """
+       input : model (TrainValidationSplitModel)
        output : validation metrics 
     """
-    
     vm = model.validationMetrics
     return vm
 
 
 #Menampilkan average metrics dari CrossValidator Model
 def avgMetrics(model):
-    """input    : CrossValidatorModel
+    """
+       input   : CrossValidatorModel
        output  : metrics
     """
     avm = model.avgMetrics
@@ -143,42 +145,41 @@ def avgMetrics(model):
 
 #menyimpan model
 def saveModel(model, path):
-    """input : model 
-                (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
-        output : void
     """
-    
+    input  : model (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
+    output : None
+    """   
     model.save(path)
-    return
+ 
 
 
 #Load Model (jika tidak menggunakan ML-tuning = conf1, jika menggunakan ML-tuning = conf2 )
-def loadModel(conf, path):
-    """input : conf, path
-       output : model
-                (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
+def loadModelLinearRegression(conf, path):
+    """
+       input  : conf, path
+       output : model (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
     """
                    
     #Jika menggunakan ML-Tuning
     if conf["tuning"]:    
         #Jika menggunakan Cross Validation, maka tipe model = CrossValidatorModel
         if conf["tuning"].get("method").lower() == "crossval":
-            loading_model = CrossValidatorModel.load(path)        
+            load_model = CrossValidatorModel.load(path)        
         #Jika menggunakan Train Validation, maka tipe model = TrainValidationSplitModel   
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
-            loading_model = TrainValidationSplitModel.load(path)
+            load_model = TrainValidationSplitModel.load(path)
     
     #Jika tidak menggunakan ML-tuning, tipe model = LinearRegressionModel    
     elif conf["tuning"] == None:
-        loading_model = LinearRegressionModel.load(path)
+        load_model = LinearRegressionModel.load(path)
     
-    return loading_model
+    return load_model
 
 
 #menampilkan prediksi test data, jika menggunakan model regresi linear
 def predict(df, model):
-    """ input   : df [spark.dataframe], linear_regression model [model]
-        output  : prediction [dataframe]
+    """ input  : df [spark.dataframe], linear_regression model [model]
+        output : prediction [dataframe]
     """    
     val = model.transform(df)
     prediction = val.select("label", "prediction")
@@ -187,7 +188,8 @@ def predict(df, model):
     
 #menunjukkan nilai R-square 
 def summaryR2(df, predictionCol, labelCol):
-    """ input : df [spark.dataframe]
+    """ 
+        input  : df [spark.dataframe]
         output : R squared on test data [float]
     """    
     lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
@@ -200,7 +202,8 @@ def summaryR2(df, predictionCol, labelCol):
 
 #menunjukkan nilai rms
 def summaryRMSE(df, predictionCol, labelCol):
-    """ input : df [spark.dataframe]
+    """ 
+        input  : df [spark.dataframe]
         output : RMS on test data [float]
     """    
     lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
@@ -213,6 +216,10 @@ def summaryRMSE(df, predictionCol, labelCol):
     
 #memilih hasil pada baris tertentu (prediksi)
 def rowSlicing(df, n):
+    """
+    df : spark-dataFrame
+    n  : row index
+    """
     num_of_data = df.count()
     ls = df.take(num_of_data)
     return ls[n]
