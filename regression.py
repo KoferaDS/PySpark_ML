@@ -217,7 +217,7 @@ def aftsurvivalRegression(df, conf):
 
 
 #Membuat model menggunakan regresi linear (dari data training)
-def linearRegressor(df, conf):
+def linearRegression(df, conf):
     """ 
         input : df [spark.dataframe], conf [configuration params]
         output : linear_regression model [model]
@@ -306,7 +306,7 @@ def isotonicRegression(df, conf):
 
   
 #Fungsi untuk mendapatkan model dari data (trained model)
-def dtRegressor(df, conf):
+def dtRegression(df, conf):
     """ 
         input : df [spark.dataframe], conf [configuration params]
         output : decisiontree_regression model [model]
@@ -428,7 +428,7 @@ def randomforestRegression (df,conf):
 
 
 #Fungsi untuk mendapatkan model dari data (trained model)
-def gbtRegressor(df, conf):
+def gbtRegression(df, conf):
     """ 
         input : df [spark.dataframe], conf [configuration params]
         output : decisiontree_regression model [model]
