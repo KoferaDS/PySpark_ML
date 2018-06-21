@@ -66,7 +66,8 @@ conf2 = {
 
 #Fungsi untuk mendapatkan model dari data (trained model)
 def gbtRegressor(df, conf):
-    """ input : df [spark.dataframe], conf [configuration params]
+    """ 
+        input : df [spark.dataframe], conf [configuration params]
         output : decisiontree_regression model [model]
     """
     featuresCol = conf["params"].get("featuresCol")
@@ -133,7 +134,8 @@ def gbtRegressor(df, conf):
 
 #Menampilkan tree model (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
 def gbtModel(model):
-    """input : model (PipelineModel/ GBTModel)
+    """
+       input : model (PipelineModel/ GBTModel)
        output  : depth dan nodes tree 
     """
     gbModel = model.stages[1]
@@ -142,17 +144,18 @@ def gbtModel(model):
 
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
-    """input : model (TrainValidationSplitModel)
+    """
+       input : model (TrainValidationSplitModel)
        output : validation metrics 
     """
-    
     vm = model.validationMetrics
     return vm
 
 
 #Menampilkan average metrics dari CrossValidator Model
 def avgMetrics(model):
-    """input    : CrossValidatorModel
+    """
+       input    : CrossValidatorModel
        output  : metrics
     """
     avm = model.avgMetrics
@@ -161,7 +164,8 @@ def avgMetrics(model):
 
 #Save Model
 def saveModel(model, path):
-    """input : model 
+    """
+       input : model 
                 (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
        output : void
     """
@@ -172,7 +176,8 @@ def saveModel(model, path):
 
 #Load Model (jika tidak menggunakan ML-tuning = conf1, jika menggunakan ML-tuning = conf2 )
 def loadModel(conf, path):
-    """input : conf, path
+    """
+       input : conf, path
        output : model
                 (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
     """
@@ -181,20 +186,21 @@ def loadModel(conf, path):
     if conf["tuning"]:    
         #Jika menggunakan Cross Validation, maka tipe model = CrossValidatorModel
         if conf["tuning"].get("method").lower() == "crossval":
-            loading_model = CrossValidatorModel.load(path)        
+            loaded_model = CrossValidatorModel.load(path)        
         #Jika menggunakan Train Validation, maka tipe model = TrainValidationSplitModel   
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
-            loading_model = TrainValidationSplitModel.load(path)
+            loaded_model = TrainValidationSplitModel.load(path)
     
     #Jika tidak menggunakan ML-tuning, tipe model = PipelineModel    
     elif conf["tuning"] == None:
-        loading_model = PipelineModel.load(path)
+        loaded_model = PipelineModel.load(path)
     
-    return loading_model
+    return loaded_model
 
 #Fungsi untuk melakukan prediksi dengan menggunakan trained model
 def predict(df, model):
-    """ input   : df [spark.dataframe], linear_regression model [model]
+    """ 
+        input   : df [spark.dataframe], linear_regression model [model]
         output  : prediction [dataframe]
     """    
     val = model.transform(df)
@@ -204,7 +210,8 @@ def predict(df, model):
 
 #funsi untuk mendapat nilai R-square
 def summaryR2(df, col_prediction, col_label):
-    """ input : df [spark.dataframe]
+    """ 
+        input : df [spark.dataframe]
         output : R squared on test data [float]
     """    
     dt_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
@@ -217,7 +224,8 @@ def summaryR2(df, col_prediction, col_label):
 
 #fungsi untuk mendapat nilai RMS
 def summaryRMSE(df, col_prediction, col_label):
-    """ input : df [spark.dataframe]
+    """ 
+        input : df [spark.dataframe]
         output : RMS on test data [float]
     """    
     lr_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
@@ -234,6 +242,11 @@ def row_slicing(df, n):
     ls = df.take(num_of_data)
     return ls[n]
 
+
+#menyalin model
+def copyModel(model):
+    copy_model = model.copy(extra=None)
+    return copy_model
 
 
 
