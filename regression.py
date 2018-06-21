@@ -23,15 +23,17 @@ from pyspark.ml.tuning import (CrossValidator, TrainValidationSplit, ParamGridBu
 from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
 from pyspark.ml.evaluation import RegressionEvaluator
 
-
+# Initialize and create SparkSession instance
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)    
  
 
-#parameter yang akan di-grid untuk diproses ke ML-tuning
+#hyperparameter yang di-grid untuk diproses ke ML-tuning (jika ingin membuat model dengan hyperparameter tuning)
 grid = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
 
 
+#--> Setiap parameter yang di-inputkan ke dictionary tidak harus dituliskan, 
+#--> jika tidak di-input maka parameter tersebut akan mengambil default-value nya 
 #parameter regresi AFT
 afts_params = {
                     "predictionCol" : "prediction",
@@ -75,7 +77,7 @@ isotonic_params = {
                   }
 
 
-#Parameter Configuration 
+#decision tree parameter configuration 
 dt_params = {
                      "maxDepth" : 3, 
                      "featuresCol":"features", 
@@ -113,7 +115,7 @@ rfr_params = {
              }
 
 
-#parameter regresi gbt
+#parameter regresi gradient boosting tree
 gbt_params = {
                     "maxIter" : 20, 
                     "maxDepth" : 3,
@@ -135,31 +137,27 @@ gbt_params = {
 
 
 
-
-#tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
-#methodParam untuk crossval : int (bilangan bulat)
-#method param untuk trainval : pecahan antara 0-1
+#tuning parameter -> metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
+# "methodParam" untuk crossval : int (bilangan bulat)
+# "methodParam" untuk trainval : pecahan antara [0-1]
 tune_params = { 
                  "method" : "crossval", 
                  "paramGrids" : grid, 
                  "methodParam" : 3  
                 }
 
-#conf1 digunakan apabila tidak akan dilakukan tuning parameter
+#conf1 digunakan apabila model dibuat tanpa hyperparameter-tuning
 conf1 = {   
               "params" : rfr_params,
               "tuning" : None
         }
 
 
-#conf2 digunakan apabila akan dilakukan tuning parameter
+#conf2 digunakan apabila model dibuat dengan parameter tuning, tuning parameter di-inputkan dengan key "tuning" 
 conf2 = {   
               "params" : rfr_params,
               "tuning" : tune_params
         }
-
-
-
 
 
 
@@ -495,8 +493,6 @@ def gbtRegression(df, conf):
     return model
 
 
-
-
 #Menampilkan tree model dari model decision tree (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
 def dtModel(model):
     """
@@ -518,8 +514,6 @@ def gbtModel(model):
     return gbModel     
 
 
-
-
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
     """
@@ -529,7 +523,6 @@ def validatorMetrics(model):
     
     vm = model.validationMetrics
     return vm
-
 
 
 #Menampilkan average metrics dari CrossValidator Model
@@ -542,21 +535,16 @@ def avgMetrics(model):
     return avm 
 
 
-
 #menyimpan model
 def saveModel(model, path):
     """
-        input : model 
-                (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
-        output : void
+        input : model(CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
+        output : None
     """
-    
     model.save(path)
-    return
-
+    
 
 #Memuat model
-
 def loadaftRegression(conf, path):
     '''Loading model from path.
        Input  : - Path
@@ -611,8 +599,7 @@ def loadisotonicRegression(path):
 def loaddtRegression(conf, path):
     """
         input : conf, path
-        output : model
-                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+        output : model (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
     """
     
     #Jika menggunakan ML-Tuning
@@ -630,7 +617,7 @@ def loaddtRegression(conf, path):
     
     return loaded_model
 
-
+   
 def loadrfRegression(conf, path):
     '''Loading model from path.
        Input  : -Path
@@ -653,10 +640,8 @@ def loadrfRegression(conf, path):
 def loadgbtRegression(conf, path):
     """
         input : conf, path
-        output : model
-                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
-    """
-    
+        output : model (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+    """    
     #Jika menggunakan ML-Tuning
     if conf["tuning"]:    
         #Jika menggunakan Cross Validation, maka tipe model = CrossValidatorModel
@@ -672,9 +657,6 @@ def loadgbtRegression(conf, path):
     
     return loaded_model
 
-
-
-
 #menampilkan prediksi test data, jika menggunakan model regresi linear
 def predict(df, model):
     """ 
@@ -685,11 +667,8 @@ def predict(df, model):
     prediction = val.select("label", "prediction")
     return prediction   
 
-    
-
-
 #menunjukkan nilai R-square 
-def summaryR2(df, predictionCol, labelCol):
+def summaryR2(df, predictionCol="prediction", labelCol="label"):
     """ 
         input : df [spark.dataframe]
         output : R squared on test data [float]
@@ -702,10 +681,8 @@ def summaryR2(df, predictionCol, labelCol):
     return r2_df
 
 
-
-
 #menunjukkan nilai rms
-def summaryRMSE(df, predictionCol, labelCol):
+def summaryRMSE(df, predictionCol="prediction", labelCol="label"):
     """ 
         input : df [spark.dataframe]
         output : RMS on test data [float]
@@ -716,18 +693,14 @@ def summaryRMSE(df, predictionCol, labelCol):
     rmse = [(Vectors.dense(rmse),)]
     rmse_df = spark.createDataFrame(rmse, ["RMS"])
     return rmse_df 
-  
-
- 
     
 #memilih hasil pada baris tertentu (prediksi)
 def rowSlicing(df, n):
-    num_of_data = df.count()
-    ls = df.take(num_of_data)
-    return ls[n]
-
-
-
+  """ dataFrame to slicedDataFrame"""
+  num_of_data = df.count()
+  ls = df.take(num_of_data)
+  df = sc.parallelize([ls[n]]).toDF()
+  return df
 
 #menyalin model
 def copyModel(model):
@@ -736,15 +709,10 @@ def copyModel(model):
 
 
 
+#>>>======================================(example of usage)==============================================<<<
 
 
-#-----------------------------------------------------------------------------------------------------------
-
-
-
-#load input data
-
-
+#Load the input data
 #Loads dataframe untuk isotonic regression
 isoton_df = spark.read.format("libsvm")\
             .load("C:/Users/Lenovo/spark-master/data/mllib/sample_isotonic_regression_libsvm_data.txt")   
@@ -761,9 +729,9 @@ isoton_df = spark.read.format("libsvm")\
 tree_df = spark.read.format("libsvm").load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")
 
 
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-#FEATURE INDEXER HANYA DIAKTIFKAN BILA MENGGUNAKAN "DECISION TREE", "RANDOM FOREST", DAN "GBT"
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+#FEATURE INDEXER HANYA DIAKTIFKAN BILA MENGGUNAKAN "DECISION TREE", "RANDOM FOREST", DAN "GradientBoostingTree"
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
 # Automatically identify categorical features, and index them.
@@ -774,17 +742,16 @@ featureIndexer =\
 training, test = tree_df.randomSplit([0.7, 0.3], seed = 11)
 
 
-
 #CONTOH PENGGUNAAN FUNGSI
 
-#getting model
+#create model
 model = randomforestRegression(training, conf1)
 
-#getting prediction
+#use the model for prediction
 testing = predict(test, model)
 
-#getting R-square
+#accuracy metric : R-square
 rsq = summaryR2(testing, "prediction", "label")  
 
-#getting RMS
+#accuracy metric : RMS
 rms= summaryRMSE(testing, "prediction", "label")
