@@ -147,14 +147,14 @@ tune_params = {
 
 #conf1 digunakan apabila tidak akan dilakukan tuning parameter
 conf1 = {   
-              "params" : dt_params,
+              "params" : rfr_params,
               "tuning" : None
         }
 
 
 #conf2 digunakan apabila akan dilakukan tuning parameter
 conf2 = {   
-              "params" : dt_params,
+              "params" : rfr_params,
               "tuning" : tune_params
         }
 
