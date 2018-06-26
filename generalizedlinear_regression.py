@@ -171,10 +171,18 @@ def averageMetrics(model):
 
 # saving model
 def saveModel(model, path):
+    """
+        input: model [CrossValidatorModel, TrainSplitValidationModel, GeneralizedLinearRegressionModel], path [string]
+        output: None
+    """
     model.save(path)
 
 # loading model
 def loadModel(conf, path):
+    """
+        input : conf [dictionary], path [string]
+        output: model [CrossValidatorModel, TrainValidationSplitModel, GeneralizedLinearRegressionModel]
+    """
     if conf["tuning"]:
         if conf["tuning"].get("method").lower() == "crossval":
             loading_model = CrossValidatorModel.load(path)
@@ -225,6 +233,10 @@ def summaryRMSE(dataFrame, predictionCol, labelCol):
 
 # select value from certain row
 def rowSlicing(dataFrame, n):
+    """
+        input  : dataFrame [spark.dataFrame], n [integer]
+        output : data [pyspark.sql.types.Row]
+    """
     num_of_data = dataFrame.count()
     ls = dataFrame.take(num_of_data)
     return ls[n]
