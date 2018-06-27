@@ -122,25 +122,135 @@ def linearRegressor(df, conf):
           model = lr.fit(df)
           
     return model
+   
+   
+#fungsi untuk menampilkan koefisien (hanya dapat digunakan bila model = LinearRegressionModel)
+def coeff(model):
+    """
+        input  : model (LinearRegressionModel)
+        output : dataframe
+    """
+    coefficients = model.coefficients
+    coeff  = []
+    for c in coefficients:
+        coeff.append((Vectors.dense(c),))
+    df_c = spark.createDataFrame(coeff, ["Coefficients"])
+    df_c.show()
+    return df_c
+    
+
+#fungsi untuk menampilkan intercept (hanya daoat digunakan bila model = LinearRegressionModel)
+def intercept(model):
+    """
+        input  : model (LinearRegressionModel)
+        output : df (dataframe)
+    """    
+    i = model.intercept
+    inter =  [(Vectors.dense(i),)]
+    i_df = spark.createDataFrame(inter, ["intercepts"])
+    i_df.show()
+    return i_df
+
+   
+#fungsi untuk menampilkan summary dari model = total iterasi
+def summaryModel_iter(model):
+    """
+        input : trained model (LinearRegressionModel)
+        output : dataframe
+    """
+    modelsum = model.summary
+    tot_iter = modelsum.totalIterations
+    total =  [(Vectors.dense(tot_iter),)]
+    iter_df = spark.createDataFrame(total, ["total iter"])
+    iter_df.show()
+    return iter_df
+
+   
+#fungsi untuk menampilkan summary dari model = objective history
+def summaryModel_obj(model):
+    """
+        input : trained model (LinearRegressionModel)
+        output : dataframe
+    """
+    modelsum = model.summary
+    obj = modelsum.objectiveHistory
+    objective  = []
+    for ob in obj:
+        objective.append((Vectors.dense(ob),))
+    df_obj = spark.createDataFrame(objective, ["Objective History"])
+    df_obj.show()
+    return df_obj
+
+   
+#fungsi untuk menampilkan summary dari model = objective history    
+def summaryModel_residual(model):
+    """
+        input : trained model (LinearRegressionModel)
+        output: residual dataframe
+    """
+    modelsum = model.summary
+    residual = modelsum.residuals
+    residual.show()
+    return residual
+
+   
+#fungsi untuk menampilkan summary dari model = objective history 
+def summaryModel_RMSE(model):
+    """
+        input : training model (LinearRegressionModel)
+        output: dataframe
+    """
+    modelsum = model.summary    
+    rms = modelsum.rootMeanSquaredError
+    rmse = [(Vectors.dense(rms),)]
+    rmse_df = spark.createDataFrame(rmse, ["RMSE of Model"])
+    rmse_df.show()
+    return rmse_df
+
+   
+#fungsi untuk menampilkan summary dari model = objective history 
+def summaryModel_R2(model):
+    """
+        input : training model (LinearRegressionModel)
+        output: dataframe
+    """
+    modelsum = model.summary
+    r = modelsum.r2
+    rsq = [(Vectors.dense(r),)]
+    rsq_df = spark.createDataFrame(rsq, ["R-square of Model"])
+    rsq_df.show()
+    return rsq_df
+
 
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
     """
        input : model (TrainValidationSplitModel)
-       output : validation metrics 
+       output : dataframe
     """
+    
     vm = model.validationMetrics
-    return vm
+    vmet  = []
+    for v in vm:
+        vmet.append((Vectors.dense(v),))
+    df_vm = spark.createDataFrame(vmet, ["Validation Metrics"])
+    df_vm.show()
+    return df_vm
 
 
 #Menampilkan average metrics dari CrossValidator Model
 def avgMetrics(model):
     """
-       input   : CrossValidatorModel
-       output  : metrics
+       input    : CrossValidatorModel
+       output  : dataframe
     """
     avm = model.avgMetrics
-    return avm   
+    avmet  = []
+    for av in avm:
+        avmet.append((Vectors.dense(av),))
+    df_avm = spark.createDataFrame(avmet, ["Validation Metrics"])
+    df_avm.show()
+    return df_avm   
 
 
 #menyimpan model
