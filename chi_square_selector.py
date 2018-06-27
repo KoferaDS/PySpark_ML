@@ -11,20 +11,20 @@ sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)
 
 #define parameter and configuration
-param = {
+parameter = {
         "featuresCol" : "features",
         "labelCol" : "clicked",
         "outputCol" : "selectedFeatures"
         }
 
 num_config = {
-        "numTopFeatures" : 2,
+        "numTopFeatures" : 50,
         "percentile" : 0.1,
-        "fpr" : 0.1
+        "fpr" : 0.05
         }
 
 config = {
-        "params" : param,
+        "params" : parameter,
         "selectedType" : num_config
         }
     
@@ -100,7 +100,7 @@ def fprChiSqModel(df, conf):
     
     return model
 
-def transformModel(dataFrame, model):
+def transformData(dataFrame, model):
     return model.transform(dataFrame)
 
 #Save model into corresponding path    
@@ -124,6 +124,12 @@ def loadModel(path):
     return model
 
 def copyModel(model):
+    '''
+    Returning copied model
+    Input: model
+    Output: model of copy
+    '''
+    
     copy_model = model.copy(extra=None)
     return copy_model
 
@@ -150,8 +156,7 @@ if __name__ == "__main__" :
     according to a chi-squared test.
     '''
     num = numChiSqModel(df, config)
-    print(transformModel(df, num))
-    transformModel(df, num).show()
+    transformData(df, num).show()
     
     '''
     - with percentile selection method
@@ -159,7 +164,7 @@ if __name__ == "__main__" :
     features instead of a fixed number.
     '''
     #per = perChiSqModel(df, config)
-    #transformModel(df, per).show()
+    #transformData(df, per).show()
     
     '''
     - with fpr selection method
@@ -167,7 +172,7 @@ if __name__ == "__main__" :
     thus controlling the false positive rate of selection.
     '''
     #fpr = fprChiSqModel(df, config)
-    #transformModel(df, fpr).show()
+    #transformData(df, fpr).show()
             
     spark.stop()
 
