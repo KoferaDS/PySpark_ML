@@ -1,9 +1,9 @@
 from __future__ import print_function
 from pyspark.ml.evaluation import RegressionEvaluator
-from pyspark.ml.tuning import CrossValidator, ParamGridBuilder, TrainValidationSplit
-from pyspark.ml.tuning import CrossValidatorModel, TrainValidationSplitModel
-from pyspark.ml.regression import RandomForestRegressor, RandomForestRegressionModel
-from pyspark.ml import Pipeline
+from pyspark.ml.tuning import CrossValidator,ParamGridBuilder,TrainValidationSplit
+from pyspark.ml.regression import RandomForestRegressor
+from pyspark.ml.regression import RandomForestRegressionModel
+from pyspark.ml import Pipeline, PipelineModel
 from pyspark.ml.feature import VectorIndexer
 from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
@@ -12,7 +12,7 @@ from pyspark.ml.linalg import Vectors
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)  
  
-# Set parameter and its value for randomforest regression
+# Set params and its value for randomforest regression
 rfr_params = {
                 "featuresCol":"features", "labelCol":"label", 
                 "predictionCol" : "prediction", "maxDepth" : 5, "maxBins" : 32,
@@ -23,13 +23,18 @@ rfr_params = {
                 "featureSubsetStrategy" : "auto"
              }   
 
-# Set params tuning
-# method : "crossval" , "trainvalsplit"
-# methodParams is set as : - fold for "crossval" (value : f>0) 
-#                          - trainratio for "trainvalsplit" (value: 0<tr<1)f>0)
+# Set hyperparams that we want to grid
+grid = {
+        "maxDepth" : [3,4,5],
+        "numTrees" : [10,15,20]
+        }
 
+# Set params tuning whether use : - method "crossval" or "trainvalsplit"
+#                                 - methodParams is set as fold for "crossval" (value : f>0)
+#                                   and trainratio for "trainvalsplit" (value: 0<tr<1)
 tuning_params = {
                     "method" : "trainvalsplit",
+                    "paramGrids" :  grid,
                     "methodparams" : 0.8
                 }  
 # Set configuration whether use tuning/non-tuning
@@ -72,31 +77,37 @@ def randomforestRegression (df,conf):
     if conf["tuning"]:
         if conf["tuning"].get("method").lower() == "crossval":
             folds = conf["tuning"].get("methodParam", 4)
-        
-# Set the hyperparameter that we want to grid, incase: maxDepth and numTrees
-            grid = ParamGridBuilder()\
-                .addGrid(rfr.maxDepth,[3,4,5])\
-                .addGrid(rfr.numTrees,[15,20])\
-                .build()
+            paramGrids = conf["tuning"].get("paramGrids")
+            pg=ParamGridBuilder()
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
+            grid = pg.build()
             evaluator = RegressionEvaluator()
-            cv = CrossValidator(estimator=rfr, estimatorParamMaps=grid,
-                                evaluator=evaluator, numFolds=folds)
+            cv = CrossValidator(estimator=pipeline, estimatorParamMaps=grid,
+                            evaluator=evaluator, numFolds=folds)
             model = cv.fit(df)
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
             tr = conf["tuning"].get("methodParam", 0.8)
-       
-# Set the hyperparameter that we want to grid, incase: maxDepth and numTrees
-            grid = ParamGridBuilder()\
-                .addGrid(rfr.maxDepth,[3,4,5])\
-                .addGrid(rfr.numTrees,[15,20])\
-                .build()
+            paramGrids = conf["tuning"].get("paramGrids")
+            pg=ParamGridBuilder()
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
+            grid = pg.build()
             evaluator = RegressionEvaluator()
-            tvs = TrainValidationSplit(estimator=rfr, estimatorParamMaps=grid,
-                                       evaluator=evaluator, trainRatio=tr)
+            tvs = TrainValidationSplit(estimator=pipeline, estimatorParamMaps=grid,
+                                   evaluator=evaluator, trainRatio=tr)
             model = tvs.fit(df)
     elif conf["tuning"] ==  None:
         model = pipeline.fit(df)
     return model
+
+def rfrmodel (model):
+    ''' transform pipelinemodel into RandomForestRegressionModel
+       Input   : Pipeline Model
+       Output  : Random Forest Model
+    '''
+    rfrmodel = model.stages[1]
+    return rfrmodel
     
 def saveModel(model,path):
     '''Save model into corresponding path.
@@ -112,20 +123,12 @@ def loadModel(path):
        Input  : -Path
        Output : -Loaded model
     '''
-  # Loaded model if use crossvalidation tuning
-    if config["tuning"].get("method") == "crossval" :
-        loaded_model = CrossValidatorModel.load(path)   
-  # Loaded model if use trainvalidationsplit tuning
-    elif config["tuning"].get("method") == "trainval":
-        loaded_model = TrainValidationSplitModel.load(path)
-  # Loaded model if use pipeline (non-tuning)
-    elif config["tuning"].get("method") == None:
-        loaded_model = PipelineModel.load(path)
-        
-    return loaded_model
+    model = RandomForestRegressionModel.load(path)
+    return model
+
 
 def predict (df, model):
-    """ Prediction value by the trained model
+    """ 
         Input  : -Dataframe test(df)
                  -Trained model (model)
         Output : -Dataframe with prediction column (transformed)
@@ -140,14 +143,6 @@ def prediction (df,model):
         Output :  -Dataframe display with prediction column (transformed)
     """
     model.transform(df).show()
-   
-def summary_validationMetrics(model):
-    """ Validation metrics value
-        input : - trained model
-        ouput : - validation metrics value
-    """
-    vm = model.validationMetrics
-    return vm
 
 def summary_R2(df):
     """ Root square value from the model
@@ -178,10 +173,10 @@ def copyModel(model):
 
 #     Loads dataframe
 df_rfr = spark.read.format("libsvm")\
-            .load("D:\Kofera\spark-master\data\mllib\sample_libsvm_data.txt")    
+            .load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")    
     
 #     Splitting dataframe into dataframe training and test
-#     ex: df ratio df_training:df_test = 7:3
+#     ex: 0.6 (70%) datainput used as df training and 0.4 (30%) used as df test
 (df_training, df_test) = df_rfr.randomSplit([0.7, 0.3])
 
 #     Automatically identify categorical features, and index them.
@@ -191,14 +186,16 @@ featureIndexer =\
                       maxCategories=4).fit(df_rfr)
  
 #     Applied methods to Data
-# RFR Model
-trained_model = randomforestRegression(df_training,conf1)
+# IR Model
+trained_model = randomforestRegression(df_training,conf2)
 
-#Save model
-save = saveModel(trained_model, "path")
+##Save model
+#save = saveModel(trained_model, "path")
 
-#Load model
-loaded_model = loadModel("path")
+##Load model
+#load_irmodel = loadIsotonicRegression("path")
+#load_cvmodel = loadCrossValidation("path")
+#load_tvsmodel = loadTrainValidationSplit("path")
 
 # Prediction
 testing = predict(df_test,trained_model)
@@ -207,9 +204,6 @@ testing.show()
 # Root square
 r2      = summary_R2(testing)  
 r2.show() 
-# Root mean square
+## Root mean square
 rmse    = summary_Rmse(testing)  
 rmse.show()
-# Validation Metrics
-vm = summary_validationMetrics(trained_model)
-vm.show()
