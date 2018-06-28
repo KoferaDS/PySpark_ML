@@ -1,13 +1,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Jun 28 10:25:02 2018
-
-@author: Lenovo
-"""
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 20 10:52:46 2018
-
 """
 
 from pyspark.ml.linalg import Vectors
@@ -47,6 +40,21 @@ dt_params = {
                      "seed" : None, 
                      "varianceCol" :None
              }
+
+
+def converterDF(df, cols, features):
+    """
+        input : df = dataframe  (per feature per column), 
+                cols = variable containing list of feature columns OR 
+                       list of feature columns (example : ["a", "b", "c"] )
+                features = string (example : "features")
+                
+        output : dataframe (features in one column)
+                 
+    """
+    converter = VectorAssembler(inputCols=cols,outputCol=features)
+    converter_df = converter.transform(df)
+    return converter_df
 
 
 #tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
