@@ -12,12 +12,11 @@ from pyspark.ml import Pipeline
 from pyspark.ml import PipelineModel
 
 from pyspark.ml.regression import AFTSurvivalRegression, AFTSurvivalRegressionModel
-from pyspark.ml.regression import LinearRegression, LinearRegressionModel
-from pyspark.ml.regression import GeneralizedLinearRegression, GeneralizedLinearRegressionModel
 from pyspark.ml.regression import IsotonicRegression, IsotonicRegressionModel
-from pyspark.ml.regression import DecisionTreeRegressor, DecisionTreeModel
-from pyspark.ml.regression import RandomForestRegressor, RandomForestRegressionModel
 from pyspark.ml.regression import GBTRegressor, GBTRegressionModel
+from pyspark.ml.regression import DecisionTreeRegressor, DecisionTreeModel
+from pyspark.ml.regression import LinearRegression, LinearRegressionModel
+from pyspark.ml.regression import RandomForestRegressor, RandomForestRegressionModel
 
 from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import VectorIndexer
@@ -33,7 +32,6 @@ spark = SparkSession(sc)
 #hyperparameter yang di-grid untuk diproses ke ML-tuning (jika ingin membuat model dengan hyperparameter tuning)
 grid_aft = { "maxIter" : [15,20,25], "aggregationDepth" : [3,4,5]}   
 grid_lr = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
-grid_glr = { "maxIter": [50, 100, 120], "regParam": [0.1, 0.01]}
 grid_dt = { "maxDepth" : [3,4,5]}
 grid_rf = { "maxDepth" : [3,4,5], "numTrees" : [10,15,20]}
 grid_gbt = { "maxIter" : [15,20,25], "maxDepth" : [3,4,5]}
@@ -72,23 +70,6 @@ linear_params  = {
                     "epsilon" : 1.35
                     }
 
-# generalized linear regression model params
-generalized_params = {
-                    "labelCol": "label",
-                    "featuresCol": "features",
-                    "predictionCol": "prediction",
-                    "family": "gaussian",
-                    "link": "identity",
-                    "fitIntercept": True,
-                    "maxIter": 10,
-                    "tol": 1e-6,
-                    "regParam": 0.3,
-                    "weightCol": None,
-                    "solver": "irls",
-                    "linkPredictionCol": "p",
-                    "variancePower": 0.0,
-                    "linkPower": None
-                    }
 
 #parameter regresi isotonik
 isotonic_params = {
@@ -232,8 +213,8 @@ def aftsurvivalRegression(df, conf):
       # Set the hiperparameter that we want to grid, incase: maxIter and aggregationDepth
       paramGrids = conf["tuning"].get("paramGrids")
       pg=ParamGridBuilder()
-      for key in paramgGrids:
-          pg.addGrid(key, paramgGrids[key])
+      for key in paramGrids:
+          pg.addGrid(key, paramGrids[key])
       grid = pg.build()
       evaluator = RegressionEvaluator()
       cv = CrossValidator(estimator=afts, estimatorParamMaps=grid,
@@ -245,8 +226,8 @@ def aftsurvivalRegression(df, conf):
       # Set the hiperparameter that we want to grid, incase: maxIter and aggregationDepth
       paramGrids = conf["tuning"].get("paramGrids")
       pg=ParamGridBuilder()
-      for key in paramgGrids:
-          pg.addGrid(key, paramgGrids[key])
+      for key in paramGrids:
+          pg.addGrid(key, paramGrids[key])
       grid = pg.build()
       evaluator = RegressionEvaluator()
       tvs = TrainValidationSplit(estimator=afts, estimatorParamMaps=grid,
@@ -292,10 +273,10 @@ def linearRegression(df, conf):
             
         #jika menggunakan ml-tuning cross validation  
         if conf["tuning"].get("method").lower() == "crossval":
-            paramgGrids = conf["tuning"].get("paramGrids")
+            paramGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
-            for key in paramgGrids:
-              pg.addGrid(key, paramgGrids[key])
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
           
             grid = pg.build()
             folds = conf["tuning"].get("methodParam")
@@ -306,10 +287,10 @@ def linearRegression(df, conf):
           
         #jika menggunakan ml-tuning train validation split
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
-            paramgGrids = conf["tuning"].get("paramGrids")
+            paramGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
-            for key in paramgGrids:
-              pg.addGrid(key, paramgGrids[key])
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
           
             grid = pg.build()
             tr = conf["tuning"].get("methodParam")
@@ -326,94 +307,6 @@ def linearRegression(df, conf):
     return model
 
 
-# create generalized linear regression from trained data
-def generalizedLinearRegressor(dataFrame, conf):
-    """
-        input: df [spark.dataFrame], conf [configuration params]
-        output: generalized linear regression model [model]
-    """
-    
-    # calling params
-    label_col = conf["params"].get("labelCol", "label")
-    features_col = conf["params"].get("featuresCol", "features")
-    prediction_col = conf["params"].get("predictionCol", "prediction")
-    fam = conf["params"].get("family", "gaussian")
-
-    fit_intercept = conf["params"].get("fitIntercept", True)
-    max_iter = conf["params"].get("maxIter", 25)
-    tolp = conf["params"].get("tol", 1e-6)
-    reg_param = conf["params"].get("regParam", 0.0)
-    weight_col = conf["params"].get("weightCol", None)
-    solverp = conf["params"].get("solver", "irls")
-    link_prediction_col = conf["params"].get("linkPredictionCol", None)
-    variance_power = conf["params"].get("variancePower", 0.0)
-    link_power = conf["params"].get("linkPower", None)
-
-    if (fam == "gaussian"):
-        li = conf["params"].get("link", "identity")
-    elif (fam == "binomial"):
-        li = conf["params"].get("link", "logit")
-    elif (fam == "poisson"):
-        li = conf["params"].get("link", "log")
-    elif (fam == "gamma"):
-        li = conf["params"].get("link", "inverse")
-    elif (fam == "tweedle"):
-        li = conf["params"].get("link", 1 - variance_power)
-    else:
-        li = conf["params"].get("link", None)
-
-    glr = GeneralizedLinearRegression(labelCol=label_col, 
-                                      featuresCol=features_col, 
-                                      predictionCol=prediction_col, 
-                                      family=fam,
-                                      link=li, 
-                                      fitIntercept=fit_intercept, 
-                                      maxIter=max_iter, 
-                                      tol=tolp, 
-                                      regParam=reg_param, 
-                                      solver=solverp, 
-                                      linkPredictionCol=link_prediction_col, 
-                                      variancePower=variance_power, 
-                                      linkPower=link_power)
-
-    # with tuning
-    if conf["tuning"]:
-        # method: cross validation
-        if conf["tuning"].get("method").lower() == "crossval":
-            paramGrids = conf["tuning"].get("paramGrids")
-            pg = ParamGridBuilder()
-            for key in paramGrids:
-                pg.addGrid(key, paramGrids[key])
-
-            grid = pg.build()
-            folds = conf["tuning"].get("methodParam")
-            evaluator = RegressionEvaluator()
-            cv = CrossValidator(estimator = glr, estimatorParamMaps = grid, 
-                                evaluator = evaluator, numFolds = folds)
-            model = cv.fit(dataFrame)
-
-        # method: train validation split
-        elif conf["tuning"].get("method").lower() == "trainvalsplit":
-            paramGrids = conf["tuning"].get("paramGrids")
-            pg = ParamGridBuilder()
-            for key in paramGrids:
-                pg.addGrid(key, paramGrids[key])
-
-            grid = pg.build()
-            tr = conf["tuning"].get("methodParam")
-            evaluator = RegressionEvaluator()
-            tvs = TrainValidationSplit(estimator = glr, 
-                                       estimatorParamMaps = grid, 
-                                       evaluator = evaluator, trainRatio = tr)
-            model = tvs.fit(dataFrame)
-
-    # without tuning
-    else:
-        model = glr.fit(dataFrame)
-
-    return model   
-   
-   
 #fungsi regresi isotonik
 def isotonicRegression(df, conf):
   """ Isotonic Regression training
@@ -479,8 +372,8 @@ def dtRegression(df, conf):
           elif conf["tuning"].get("method").lower() == "trainvalsplit":
             paramgGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
-            for key in paramgGrids:
-              pg.addGrid(key, paramgGrids[key])
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
           
             grid = pg.build()
             tr = conf["tuning"].get("methodParam")
@@ -588,10 +481,10 @@ def gbtRegression(df, conf):
             
           #jika menggunakan ml-tuning cross validation  
           if conf["tuning"].get("method").lower() == "crossval":
-            paramgGrids = conf["tuning"].get("paramGrids")
+            paramGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
             for key in paramgGrids:
-              pg.addGrid(key, paramgGrids[key])
+              pg.addGrid(key, paramGrids[key])
           
             grid = pg.build()
             folds = conf["tuning"].get("methodParam")
@@ -602,10 +495,10 @@ def gbtRegression(df, conf):
           
           #jika menggunakan ml-tuning train validation split
           elif conf["tuning"].get("method").lower() == "trainvalsplit":
-            paramgGrids = conf["tuning"].get("paramGrids")
+            paramGrids = conf["tuning"].get("paramGrids")
             pg = ParamGridBuilder()
             for key in paramgGrids:
-              pg.addGrid(key, paramgGrids[key])
+              pg.addGrid(key, paramGrids[key])
           
             grid = pg.build()
             tr = conf["tuning"].get("methodParam")
@@ -631,7 +524,16 @@ def dtModel(model):
     
     tModel = model.stages[1]
     return tModel
-
+   
+#Menampilkan tree model dari model random forest (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
+def rfModel(model):
+    """
+        input : model (RandomForestModel/PipelineModel)
+        output : the depth and nodes of RandomForestRegressionModel
+    """
+    
+    rfModel = model.stages[1]
+    return rfModel
 
 #Menampilkan tree model dari model GBT (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
 def gbtModel(model):
@@ -786,7 +688,7 @@ def loadgbtRegression(conf, path):
     
     return loaded_model
 
-#menampilkan prediksi test data, jika menggunakan model regresi linear
+#menampilkan prediksi test data
 def predict(df, model):
     """ 
         input   : df [spark.dataframe], linear_regression model [model]
@@ -822,6 +724,35 @@ def summaryRMSE(df, predictionCol="prediction", labelCol="label"):
     rmse = [(Vectors.dense(rmse),)]
     rmse_df = spark.createDataFrame(rmse, ["RMS"])
     return rmse_df 
+
+#Menunjukkan nilai koefisien model, hanya jika model adalah AFTSurvivalRegressionModel
+def summaryModel_coefficient(model):
+    """
+        input : - trained model
+        output : - model coefficient value
+    """
+    coe = model.coefficients
+    return coe
+
+#Menunjukkan nilai intercept model, hanya jika model adalah AFTSurvivalRegressionModel
+def summaryModel_intercept(model):
+    #Only if the model is AFTSurvivalRegressionModel
+    """
+        input : - trained model
+        output : - model intercept value
+    """
+    intercept = model.intercept
+    return intercept
+
+#Menunjukkan nilai quantiles predict model, hanya jika model adalah AFTSurvivalRegressionModel
+def summaryModel_quantile(model):
+    
+    """
+        input : - trained model
+        output : - predicted quantiles value
+    """
+    pq = model.predictQuantiles
+    return pq
     
 #memilih hasil pada baris tertentu (prediksi)
 def rowSlicing(df, n):
