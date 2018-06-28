@@ -126,9 +126,15 @@ if __name__ == "__main__" :
     
     new_conf = adaptParameter(conf)
     
+    print(new_conf)
+    
     #fit a CountVectorizerModel from the corpus.
     model = train(df, new_conf)
+    print(model)
+    
     result = transformData(df, model)
+    
+    print(result)
     result.show(truncate=False)
     
     print(getVocab(model))

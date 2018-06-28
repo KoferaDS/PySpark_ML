@@ -109,7 +109,14 @@ if __name__ == "__main__" :
     
     new_conf = adaptParameter(conf)
     
+    print(new_conf)
+    
     model = train(df, new_conf)
+    print(model)
     print(transformData(df, model).head())
+    
+    print(transformData(df,model))
+    
+    transformData(df, model).show()
     
     spark.stop()

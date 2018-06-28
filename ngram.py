@@ -50,7 +50,7 @@ def transformData(df, parameter) :
     if len(row.inputTokens) < ngram.getN() :
         temp = 'No element in ' + parameter["outputCol"]
     else :
-        temp  = ngram.transform(df).head()
+        temp  = ngram.transform(df)
     
     return temp
 
@@ -62,15 +62,15 @@ if __name__ == "__main__" :
     df = spark.createDataFrame([row])
     
     conf = {
-            "n" : 4, 
+            "n" : 2, 
             "inputCol" : "inputTokens", 
             "outputCol" : "nGrams"
             }
     
     new_conf = adaptParameter(conf)
-    
+
     transform_df = transformData(df, new_conf)
-    print(transform_df)
+    print(transform_df.show())
     
     row2 = Row(inputTokens=["a", "a", "c", "c", "e", "e"])
     df2 = spark.createDataFrame([row2])

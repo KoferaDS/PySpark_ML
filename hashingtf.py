@@ -48,7 +48,7 @@ def transformData(df, param) :
                         inputCol = param["inputCol"],
                         outputCol = param["outputCol"])
     
-    transform_df = hashingTF.transform(df).head()
+    transform_df = hashingTF.transform(df)
     return transform_df
             
 # ----------------Testing and Example--------------------#
@@ -65,9 +65,12 @@ if __name__ == "__main__" :
     
     new_conf = adaptParameter(conf)
     
+    print(new_conf)
+    
     transform_df = transformData(df, new_conf)
     
     print(transform_df)
+    print(transform_df.show())
     print(transform_df.words)
     print(transform_df.features)
     
