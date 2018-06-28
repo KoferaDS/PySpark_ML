@@ -1,10 +1,11 @@
 from __future__ import print_function
 from pyspark.ml.evaluation import RegressionEvaluator
 from pyspark.ml.tuning import CrossValidator,ParamGridBuilder,TrainValidationSplit
+from pyspark.ml.tuning import CrossValidatorModel,TrainValidationSplitModel
 from pyspark.ml.regression import RandomForestRegressor
 from pyspark.ml.regression import RandomForestRegressionModel
 from pyspark.ml import Pipeline, PipelineModel
-from pyspark.ml.feature import VectorIndexer
+from pyspark.ml.feature import VectorAssembler, VectorIndexer
 from pyspark.context import SparkContext
 from pyspark.sql import SparkSession
 from pyspark.ml.linalg import Vectors
@@ -12,7 +13,7 @@ from pyspark.ml.linalg import Vectors
 sc = SparkContext.getOrCreate()
 spark = SparkSession(sc)  
  
-# Set params and its value for randomforest regression
+# Set parameter and its value for randomforest regression
 rfr_params = {
                 "featuresCol":"features", "labelCol":"label", 
                 "predictionCol" : "prediction", "maxDepth" : 5, "maxBins" : 32,
@@ -23,7 +24,6 @@ rfr_params = {
                 "featureSubsetStrategy" : "auto"
              }   
 
-# Set hyperparams that we want to grid
 grid = {
         "maxDepth" : [3,4,5],
         "numTrees" : [10,15,20]
@@ -46,6 +46,19 @@ conf2   = {
                 "params" : rfr_params,
                 "tuning" : tuning_params
           }
+
+def convertDF(df,col,featuresCol):
+    """ Convert with assemble multiple features column into single column
+        Input : - Dataframe input (df)
+                - List containing of features column (list)
+                - Features output column name (string) 
+        Output: - Dataframe of assembled features column (df)
+    """
+    convert = VectorAssembler(inputCol=col,
+                              outputCol=featuresCol)
+    final_convert = convert.transform(df)
+    return final_convert
+ 
     
 def randomforestRegression (df,conf):
     """input  : - Dataframe train (df)
@@ -83,7 +96,7 @@ def randomforestRegression (df,conf):
               pg.addGrid(key, paramGrids[key])
             grid = pg.build()
             evaluator = RegressionEvaluator()
-            cv = CrossValidator(estimator=pipeline, estimatorParamMaps=grid,
+            cv = CrossValidator(estimator=rfr, estimatorParamMaps=grid,
                             evaluator=evaluator, numFolds=folds)
             model = cv.fit(df)
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
@@ -94,7 +107,7 @@ def randomforestRegression (df,conf):
               pg.addGrid(key, paramGrids[key])
             grid = pg.build()
             evaluator = RegressionEvaluator()
-            tvs = TrainValidationSplit(estimator=pipeline, estimatorParamMaps=grid,
+            tvs = TrainValidationSplit(estimator=rfr, estimatorParamMaps=grid,
                                    evaluator=evaluator, trainRatio=tr)
             model = tvs.fit(df)
     elif conf["tuning"] ==  None:
@@ -120,11 +133,19 @@ def saveModel(model,path):
 
 def loadModel(path):
     '''Loading model from path.
-       Input  : -Path
-       Output : -Loaded model
+       Input  : - Path
+       Output : - Loaded model
     '''
-    model = RandomForestRegressionModel.load(path)
-    return model
+  # Load model if use crossvalidation tuning
+    if conf["tuning"].get("method") == "crossval" :
+        loaded_model = CrossValidatorModel.load(path)   
+  # Load model if use trainvalidationsplit tuning
+    elif conf["tuning"].get("method") == "trainval":
+        loaded_model = TrainValidationSplitModel.load(path)
+  # Load model if non-tuning
+    elif conf["tuning"].get("method") == None:
+        loaded_model = PipelineModel.load(path)
+    return loaded_model
 
 
 def predict (df, model):
@@ -173,8 +194,16 @@ def copyModel(model):
 
 #     Loads dataframe
 df_rfr = spark.read.format("libsvm")\
-            .load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")    
-    
+            .load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt") 
+            
+#    Assemble dataframe features into one column
+#    Set list of column name from the dataframe
+column = []
+#    Set assembled column name
+features_name= ["features"]
+#   Set converted dataframe
+build = convertDF(df_rfr,column,features_name)    
+
 #     Splitting dataframe into dataframe training and test
 #     ex: 0.6 (70%) datainput used as df training and 0.4 (30%) used as df test
 (df_training, df_test) = df_rfr.randomSplit([0.7, 0.3])
