@@ -2,7 +2,7 @@
 
 from __future__ import print_function
 from pyspark.ml.linalg import Vectors
-
+from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import MinMaxScaler
 from pyspark.ml.feature import MinMaxScalerModel
 
@@ -112,14 +112,12 @@ def loadMinMaxData(path):
         input: path
         output: df [data frame]
     """
-    if (path.lower().find(".txt") != -1):
-        df = spark.read.format("libsvm").load(path)
-    elif (path.lower().find(".csv") != -1):
-        df = spark.read.format("csv").option("header", "true").load(path)
+    if (path.lower().find(".csv") != -1):
+        df = spark.read.format("csv").load(path, header = True, inferSchema = "true")
     elif (path.lower().find(".json") != -1):
-        df = spark.read.json(path)
+        df = spark.read.json(path, header = True, inferSchema = "true")
     elif (path.lower().find(".md") != -1):
-        df = spark.read.textFile(path)
+        df = spark.read.textFile(path, header = True, inferSchema = "true")
     else:
         print("Unsupported yet.")
 
@@ -133,12 +131,14 @@ if __name__ == "__main__":
     print (">>>=====(this is testing example)=====<<<")
 
     #create data frame        
-    dataFrame = spark.createDataFrame([
-        (0, Vectors.dense([1.0, 0.1, -1.0]),),
-        (1, Vectors.dense([2.0, 1.1, 1.0]),),
-        (2, Vectors.dense([3.0, 10.1, 3.0]),)
-    ], ["id", "features"])
+    df = loadMinMaxData("sample_minmax_norm.csv")
         
+    assembler = VectorAssembler(
+        inputCols=["col1", "col2", "col3"],
+        outputCol="features")
+    
+    dataFrame = assembler.transform(df)
+    
     #create min max normalization scaler and model
     scaler, model = minMaxScalerModel(dataFrame, config)
     

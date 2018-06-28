@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 from pyspark.ml.linalg import Vectors
+from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import MaxAbsScaler
 from pyspark.ml.feature import MaxAbsScalerModel
 
@@ -99,14 +100,12 @@ def loadMaxAbsData(path):
         input: path
         output: df [data frame]
     """
-    if (path.lower().find(".txt") != -1):
-        df = spark.read.format("libsvm").load(path)
-    elif (path.lower().find(".csv") != -1):
-        df = spark.read.format("csv").option("header", "true").load(path)
+    if (path.lower().find(".csv") != -1):
+        df = spark.read.format("csv").load(path, header = True, inferSchema = "true")
     elif (path.lower().find(".json") != -1):
-        df = spark.read.json(path)
+        df = spark.read.json(path, header = True, inferSchema = "true")
     elif (path.lower().find(".md") != -1):
-        df = spark.read.textFile(path)
+        df = spark.read.textFile(path, header = True, inferSchema = "true")
     else:
         print("Unsupported yet.")
 
@@ -122,11 +121,14 @@ if __name__ == "__main__":
     print(">>>=====(this is testing example)=====<<<")
 
     #create data frame        
-    dataFrame = spark.createDataFrame([
-        (0, Vectors.dense([1.0, 0.1, -8.0]),),
-        (1, Vectors.dense([2.0, 1.0, -4.0]),),
-        (2, Vectors.dense([4.0, 10.0, 8.0]),)
-    ], ["id", "features"])
+    df = loadMaxAbsData("sample_maxabs_norm.csv")
+    
+    #assembling columns to vector
+    assembler = VectorAssembler(
+        inputCols=["col1", "col2", "col3"],
+        outputCol="features")
+    
+    dataFrame = assembler.transform(df)
         
     #create max absolute normalization scaler and model
     scaler, model = maxAbsScalerModel(dataFrame, config)

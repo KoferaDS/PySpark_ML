@@ -16,7 +16,7 @@ spark = SparkSession\
     
 config = {
             "threshold" : 0.5,
-            "inputCol" : "features",
+            "inputCol" : "col1",
             "outputCol" : "binarizedFeatures"  
         }
 
@@ -80,16 +80,14 @@ def saveBinaryData(data, path, dataType):
 def loadBinaryData(path):
     """
         input: path
-        output: df [data frame]
+        return value: df [data frame]
     """
-    if (path.lower().find(".txt") != -1):
-        df = spark.read.format("libsvm").load(path)
-    elif (path.lower().find(".csv") != -1):
-        df = spark.read.format("csv").option("header", "true").load(path)
+    if (path.lower().find(".csv") != -1):
+        df = spark.read.format("csv").load(path, header = True, inferSchema = "true")
     elif (path.lower().find(".json") != -1):
-        df = spark.read.json(path)
+        df = spark.read.json(path, header = True, inferSchema = "true")
     elif (path.lower().find(".md") != -1):
-        df = spark.read.textFile(path)
+        df = spark.read.textFile(path, header = True, inferSchema = "true")
     else:
         print("Unsupported yet.")
 
@@ -102,11 +100,7 @@ def loadBinaryData(path):
 if __name__ == "__main__":
 
     #create data frame        
-    dataFrame = spark.createDataFrame([
-        (0, 0.1),
-        (1, 0.8),
-        (2, 0.2)
-    ], ["id", "features"])
+    dataFrame = loadBinaryData("sample_binary_norm.csv")
         
     #create binary scaler model
     model = binaryScalerModel(dataFrame, config)
@@ -130,4 +124,4 @@ if __name__ == "__main__":
     data2 = binaryTransformData(model2, dataFrame)
 
     #showing normalized data
-    data2.select("features", "binarizedFeatures").show()
+    data2.show()

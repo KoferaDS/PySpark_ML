@@ -2,6 +2,7 @@
 
 from __future__ import print_function
 from pyspark.ml.linalg import Vectors
+from pyspark.ml.feature import VectorAssembler
 
 from pyspark.ml.feature import StandardScaler
 from pyspark.ml.feature import StandardScalerModel
@@ -84,7 +85,7 @@ def saveStandardData(data, path, dataType):
         return value: void
     """
     if (dataType == 'csv'):
-        data.toPandas().to_csv(path)
+        data.toPandas().to_csv(path, float_format = None)
     elif (dataType == 'html'):
         data.toPandas().to_html(path)
     elif (dataType == 'json'):
@@ -93,6 +94,8 @@ def saveStandardData(data, path, dataType):
         data.toPandas().to_pickle(path)
     elif (dataType == 'records'):
         data.toPandas().to_records(path)
+    elif (dataType == 'txt'):
+        data.toPandas().to_csv(path, sep = '\t', index = False, header = False)
     else:
         print("Setting defaults to csv")
         data.toPandas().to_csv(path)
@@ -103,33 +106,35 @@ def loadStandardData(path):
         input: path
         output: df [data frame]
     """
-    if (path.lower().find(".txt") != -1):
-        df = spark.read.format("libsvm").load(path)
-    elif (path.lower().find(".csv") != -1):
-        df = spark.read.format("csv").option("header", "true").load(path)
+#    if (path.lower().find(".txt") != -1):
+#        df = spark.read.format("libsvm").load(path, header = False, inferSchema = "true")
+    if (path.lower().find(".csv") != -1):
+        df = spark.read.format("csv").load(path, header = True, inferSchema = "true")
     elif (path.lower().find(".json") != -1):
-        df = spark.read.json(path)
+        df = spark.read.json(path, header = True, inferSchema = "true")
     elif (path.lower().find(".md") != -1):
-        df = spark.read.textFile(path)
+        df = spark.read.textFile(path, header = True, inferSchema = "true")
     else:
         print("Unsupported yet.")
 
     return df
 
-
-
+    
 
 #--------------------------Testing and Example--------------------------#
 
 if __name__ == "__main__":
 
     #create data frame        
-    dataFrame = spark.createDataFrame([
-        (0, Vectors.dense([1.0, 0.1, -8.0]),),
-        (1, Vectors.dense([2.0, 1.0, -4.0]),),
-        (2, Vectors.dense([4.0, 10.0, 8.0]),)
-    ], ["id", "features"])
+    df = loadStandardData("standard_norm_sample.csv")
         
+    #assembling columns to vector
+    assembler = VectorAssembler(
+        inputCols=["col1", "col2", "col3"],
+        outputCol="features")
+    
+    dataFrame = assembler.transform(df)
+    
     #create standard normalization scaler and model
     scaler, model = standardScalerModel(dataFrame, config)
 
