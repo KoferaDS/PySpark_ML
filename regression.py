@@ -18,6 +18,7 @@ from pyspark.ml.regression import DecisionTreeRegressor, DecisionTreeModel
 from pyspark.ml.regression import LinearRegression, LinearRegressionModel
 from pyspark.ml.regression import RandomForestRegressor, RandomForestRegressionModel
 
+from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import VectorIndexer
 from pyspark.ml.tuning import (CrossValidator, TrainValidationSplit, ParamGridBuilder)
 from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
@@ -176,7 +177,6 @@ def converterDF(df, cols, features):
     return converter_df
 
 
-#fungsi regresi AFT
 def aftsurvivalRegression(df, conf):
   """ AFT Survival Regression training
         Input  : - Dataframe of training (df)
@@ -204,24 +204,26 @@ def aftsurvivalRegression(df, conf):
     if conf["tuning"].get("method").lower() == "crossval":
       folds = conf["tuning"].get("methodParam", 2)
       # Set the hiperparameter that we want to grid, incase: maxIter and aggregationDepth
-      pg = ParamGridBuilder()\
-                .addGrid(afts.maxIter,[10, 50, 100])\
-                .addGrid(afts.aggregationDepth[3,4,5])\
-                .build()
+      paramGrids = conf["tuning"].get("paramGrids")
+      pg=ParamGridBuilder()
+      for key in paramgGrids:
+          pg.addGrid(key, paramgGrids[key])
+      grid = pg.build()
       evaluator = RegressionEvaluator()
-      cv = CrossValidator(estimator=afts, estimatorParamMaps=pg,
+      cv = CrossValidator(estimator=afts, estimatorParamMaps=grid,
                           evaluator=evaluator, numFolds=folds)
       model = cv.fit(df)
       
     elif conf["tuning"].get("method").lower() == "trainvalsplit":
       tr = conf["tuning"].get("methodParam", 0.8)
       # Set the hiperparameter that we want to grid, incase: maxIter and aggregationDepth
-      pg = ParamGridBuilder()\
-                .addGrid(afts.maxIter,[10, 50, 100])\
-                .addGrid(afts.aggregationDepth[3,4,5])\
-                .build()
+      paramGrids = conf["tuning"].get("paramGrids")
+      pg=ParamGridBuilder()
+      for key in paramgGrids:
+          pg.addGrid(key, paramgGrids[key])
+      grid = pg.build()
       evaluator = RegressionEvaluator()
-      tvs = TrainValidationSplit(estimator=afts, estimatorParamMaps=pg,
+      tvs = TrainValidationSplit(estimator=afts, estimatorParamMaps=grid,
                                  evaluator=evaluator, trainRatio=tr)
       model = tvs.fit(df)
   elif conf["tuning"] ==  None:
@@ -381,10 +383,8 @@ def dtRegression(df, conf):
     return model
 
 
-#Fungsi Regresi Random Forest
 def randomforestRegression (df,conf):
-    """
-        input  : - Dataframe train (df)
+    """input  : - Dataframe train (df)
                 - Hyperparameter configuration (conf)
        output : - Random Forest Regression Model
     """     
@@ -413,27 +413,27 @@ def randomforestRegression (df,conf):
     if conf["tuning"]:
         if conf["tuning"].get("method").lower() == "crossval":
             folds = conf["tuning"].get("methodParam", 4)
-        
-# Set the hyperparameter that we want to grid, incase: maxDepth and numTrees
-            grid = ParamGridBuilder()\
-                .addGrid(rfr.maxDepth,[3,4,5])\
-                .addGrid(rfr.numTrees,[15,20])\
-                .build()
+# Set the hiperparameter that we want to grid, ex: maxDepth and numTrees
+            paramGrids = conf["tuning"].get("paramGrids")
+            pg=ParamGridBuilder()
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
+            grid = pg.build()
             evaluator = RegressionEvaluator()
             cv = CrossValidator(estimator=rfr, estimatorParamMaps=grid,
-                                evaluator=evaluator, numFolds=folds)
+                            evaluator=evaluator, numFolds=folds)
             model = cv.fit(df)
         elif conf["tuning"].get("method").lower() == "trainvalsplit":
             tr = conf["tuning"].get("methodParam", 0.8)
-       
-# Set the hyperparameter that we want to grid, incase: maxDepth and numTrees
-            grid = ParamGridBuilder()\
-                .addGrid(rfr.maxDepth,[3,4,5])\
-                .addGrid(rfr.numTrees,[15,20])\
-                .build()
+# Set the hiperparameter that we want to grid, ex: maxDepth and numTrees
+            paramGrids = conf["tuning"].get("paramGrids")
+            pg=ParamGridBuilder()
+            for key in paramGrids:
+              pg.addGrid(key, paramGrids[key])
+            grid = pg.build()
             evaluator = RegressionEvaluator()
             tvs = TrainValidationSplit(estimator=rfr, estimatorParamMaps=grid,
-                                       evaluator=evaluator, trainRatio=tr)
+                                   evaluator=evaluator, trainRatio=tr)
             model = tvs.fit(df)
     elif conf["tuning"] ==  None:
         model = pipeline.fit(df)
