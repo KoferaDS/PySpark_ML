@@ -55,6 +55,22 @@ conf2 = {
         }
 
 
+
+def converterDF(df, cols, features):
+    """
+        input : df = dataframe  (per feature per column), 
+                cols = variable containing list of feature columns OR 
+                       list of feature columns (example : ["a", "b", "c"] )
+                features = string (example : "features")
+                
+        output : dataframe (features in one column)
+                 
+    """
+    converter = VectorAssembler(inputCols=cols,outputCol=features)
+    converter_df = converter.transform(df)
+    return converter_df
+
+
 #Membuat model menggunakan regresi linear (dari data training)
 def linearRegressor(df, conf):
     """ 
