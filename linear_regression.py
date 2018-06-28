@@ -199,7 +199,7 @@ def summaryModel_obj(model):
     return df_obj
 
    
-#fungsi untuk menampilkan summary dari model = objective history    
+#fungsi untuk menampilkan summary dari model = residual 
 def summaryModel_residual(model):
     """
         input : trained model (LinearRegressionModel)
@@ -211,7 +211,7 @@ def summaryModel_residual(model):
     return residual
 
    
-#fungsi untuk menampilkan summary dari model = objective history 
+#fungsi untuk menampilkan summary dari model = RMSE 
 def summaryModel_RMSE(model):
     """
         input : training model (LinearRegressionModel)
@@ -225,7 +225,7 @@ def summaryModel_RMSE(model):
     return rmse_df
 
    
-#fungsi untuk menampilkan summary dari model = objective history 
+#fungsi untuk menampilkan summary dari model = R-square
 def summaryModel_R2(model):
     """
         input : training model (LinearRegressionModel)
