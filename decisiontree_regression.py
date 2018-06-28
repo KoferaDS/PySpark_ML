@@ -1,54 +1,87 @@
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Jun 28 10:25:02 2018
+
+@author: Lenovo
+"""
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Jun 20 10:52:46 2018
+
+"""
+
 from pyspark.ml.linalg import Vectors
 from pyspark.context import SparkContext
 from pyspark.sql.session import SparkSession
 from pyspark.ml import Pipeline
 from pyspark.ml import PipelineModel
 
-from pyspark.ml.regression import DecisionTreeRegressor
-from pyspark.ml.regression import DecisionTreeModel
+from pyspark.ml.regression import DecisionTreeRegressor, DecisionTreeModel
 
 from pyspark.ml.feature import VectorIndexer
-from pyspark.ml.tuning import (TrainValidationSplit, CrossValidator, ParamGridBuilder)
+from pyspark.ml.tuning import (CrossValidator, TrainValidationSplit, ParamGridBuilder)
 from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
 from pyspark.ml.evaluation import RegressionEvaluator
 
+
 sc = SparkContext.getOrCreate()
-spark = SparkSession(sc)
+spark = SparkSession(sc)    
+ 
+
+#parameter yang akan di-grid untuk diproses ke ML-tuning
+grid = { "maxDepth" : [2, 3, 4]}
+
+#Parameter Configuration 
+dt_params = {
+                     "maxDepth" : 3, 
+                     "featuresCol":"features", 
+                     "labelCol":"label", 
+                     "predictionCol" : "prediction", 
+                     "maxBins" : 32, 
+                     "minInstancesPerNode" : 1, 
+                     "minInfoGain" : 0.0, 
+                     "maxMemoryInMB" : 256, 
+                     "cacheNodeIds" : False, 
+                     "checkpointInterval" : 10, 
+                     "impurity" : 'variance', 
+                     "seed" : None, 
+                     "varianceCol" :None
+             }
 
 
-config       =  {
-                 "params" : {"maxDepth" : 3, 
-                             "featuresCol":"features", 
-                             "labelCol":"label", 
-                             "predictionCol" : "prediction", 
-                             "maxBins" : 32, 
-                             "minInstancesPerNode" : 1, 
-                             "minInfoGain" : 0.0, 
-                             "maxMemoryInMB" : 256, 
-                             "cacheNodeIds" : False, 
-                             "checkpointInterval" : 10, 
-                             "impurity" : 'variance', 
-                             "seed" : None, 
-                             "varianceCol" :None
-                             },
-                             
-                 #tuning method = None, jika tidak menggunakan ML-Tuning
-                 #tuning method = crossval, jika menggunakan ML-Tuning Cross Validation
-                 #tuning method = trainval, jika menggunakan ML-Tuning Train Validation Split
-                 "tuning" : {"method" : None , "methodParam" : 0.8}
-                 }
-                 
+#tuning parameter, metode : Cross Validation (crossval) dan Train Validation Split (trainvalsplit)
+#methodParam untuk crossval : int (bilangan bulat)
+#method param untuk trainval : pecahan antara 0-1
+tune_params = { 
+                 "method" : "crossval", 
+                 "paramGrids" : grid, 
+                 "methodParam" : 3  
+                }
+
+#conf1 digunakan apabila tidak akan dilakukan tuning parameter
+conf1 = {   
+              "params" : dt_params,
+              "tuning" : None
+        }
+
+
+#conf2 digunakan apabila akan dilakukan tuning parameter
+conf2 = {   
+              "params" : dt_params,
+              "tuning" : tune_params
+        }
+
 
 #Fungsi untuk mendapatkan model dari data (trained model)
-def dtRegressor(df, conf):
-    """ input : df [spark.dataframe], conf [configuration params]
+def dtRegression(df, conf):
+    """ 
+        input : df [spark.dataframe], conf [configuration params]
         output : decisiontree_regression model [model]
     """
     featuresCol = conf["params"].get("featuresCol")
     impurity = conf["params"].get("impurity", "variance")
     
-    maxDepth    = conf["params"].get("maxDepth", 5)
+    maxDepth = conf["params"].get("maxDepth", 5)
     maxBin = conf["params"].get("maxBins",32)
     minInstancesPerNode = conf["params"].get("minInstancesPerNode", 1)
     minInfoGain = conf ["params"].get("minInfoGain", 0.0)
@@ -63,156 +96,205 @@ def dtRegressor(df, conf):
     
     print ("maxDepth : " , dt.getMaxDepth())
     
-    #Jika menggunakan ML-Tuning Cross Validation
-    if conf["tuning"].get("method") == "crossval":
-            grid = ParamGridBuilder().addGrid(dt.maxDepth, [3,4,5]).build()
-            fold = conf["tuning"].get("methodParam")
-            evaluator = RegressionEvaluator \
-            (labelCol="label", predictionCol="prediction", metricName="r2")
-            cv = CrossValidator(estimator=pipeline, estimatorParamMaps=grid, evaluator=evaluator, 
-                        numFolds=fold)
+    #jika menggunakan ml-tuning
+    if conf["tuning"]:
+            
+          #jika menggunakan ml-tuning cross validation  
+          if conf["tuning"].get("method").lower() == "crossval":
+            paramgGrids = conf["tuning"].get("paramGrids")
+            pg = ParamGridBuilder()
+            for key in paramgGrids:
+              pg.addGrid(key, paramgGrids[key])
+          
+            grid = pg.build()
+            folds = conf["tuning"].get("methodParam")
+            evaluator = RegressionEvaluator()
+            cv = CrossValidator(estimator=pipeline, estimatorParamMaps=grid, 
+                                evaluator=evaluator, numFolds= folds)
             model = cv.fit(df)
-    
-    #Jika menggunakan ML-Tuning Train Validation Split
-    elif conf["tuning"].get("method") == "trainval":
-            grid = ParamGridBuilder().addGrid(dt.maxDepth, [3,4,5]).build()
+          
+          #jika menggunakan ml-tuning train validation split
+          elif conf["tuning"].get("method").lower() == "trainvalsplit":
+            paramgGrids = conf["tuning"].get("paramGrids")
+            pg = ParamGridBuilder()
+            for key in paramgGrids:
+              pg.addGrid(key, paramgGrids[key])
+          
+            grid = pg.build()
             tr = conf["tuning"].get("methodParam")
             evaluator = RegressionEvaluator()
             tvs = TrainValidationSplit(estimator=pipeline, estimatorParamMaps=grid, 
                                        evaluator=evaluator, trainRatio=tr )
             model = tvs.fit(df)
-    
-    #Jika tidak menggunakan ML-Tuning        
-    elif conf["tuning"].get("method") == None:
-            model = pipeline.fit(df)
-       
+            
+    #jika tidak menggunakan ml-tuning
+    elif conf["tuning"] == None:
+          print ("test")
+          model = pipeline.fit(df)
+          
     return model
 
-#Menampilkan tree model (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
-def treeModel(model):
-    """input : model (DecisionTreeModel/PipelineModel)
-       output : the depth and nodes of DecisionTreeRegressionModel
+
+#Menampilkan tree model dari model decision tree (ket : dapat dipanggil apabila tidak menggunakan ML-Tuning)
+def dtModel(model):
+    """
+        input : model (DecisionTreeModel/PipelineModel)
+        output : pyspark.ml.regression.DecisionTreeRegressionModel
     """
     
     tModel = model.stages[1]
-    return tModel    
+    return tModel
+
 
 #Menampilkan validator metri (jika menggunakan ML-Tuning)
 def validatorMetrics(model):
     """input : model (TrainValidationSplitModel)
-       output : validation metrics 
+       output : dataframe
     """
     
     vm = model.validationMetrics
-    return vm
+    vmet  = []
+    for v in vm:
+        vmet.append((Vectors.dense(v),))
+    df_vm = spark.createDataFrame(vmet, ["Validation Metrics"])
+    df_vm.show()
+    return df_vm
 
 
 #Menampilkan average metrics dari CrossValidator Model
 def avgMetrics(model):
     """input    : CrossValidatorModel
-       output  : metrics
+       output  : dataframe
     """
     avm = model.avgMetrics
-    return avm   
+    avmet  = []
+    for av in avm:
+        avmet.append((Vectors.dense(av),))
+    df_avm = spark.createDataFrame(avmet, ["Validation Metrics"])
+    df_avm.show()
+    return df_avm 
 
-#Save Model
+
+
+#menyimpan model
 def saveModel(model, path):
-    """input : model 
-                (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
+    """
+        input : model 
+                (CrossValidatorModel / TrainValidationSplitModel / LinearRegressionModel)
         output : void
     """
     
     model.save(path)
+    return
 
-#Load Model
-def loadModel(path): 
-    """input : path
-       output : model
+
+#Load Model Decision Tree Regression (jika tidak menggunakan ML-tuning = conf1, jika menggunakan ML-tuning = conf2 )
+def loaddtRegression(conf, path):
+    """
+        input : conf, path
+        output : model
                 (CrossValidatorModel / TrainValidationSplitModel / PipelineModel)
     """
     
-    #Jika menggunakan ML-Tuning Cross Validation, maka tipe model = CrossValidatorModel
-    if config["tuning"].get("method") == "crossval" :
-        model = CrossValidatorModel.load(path)        
-    #Jika menggunakan ML-Tuning Train Validation, maka tipe model = TrainValidationSplitModel
-    elif config["tuning"].get("method") == "trainval":
-        model = TrainValidationSplitModel.load(path)
-    #Jika tidak menggunakan ML-Tuning, maka tipe model = DecisionTreeModel    
-    elif config["tuning"].get("method") == None:
-        model = PipelineModel.load(path)
-        
-    return model
+    #Jika menggunakan ML-Tuning
+    if conf["tuning"]:    
+        #Jika menggunakan Cross Validation, maka tipe model = CrossValidatorModel
+        if conf["tuning"].get("method").lower() == "crossval":
+            loaded_model = CrossValidatorModel.load(path)        
+        #Jika menggunakan Train Validation, maka tipe model = TrainValidationSplitModel   
+        elif conf["tuning"].get("method").lower() == "trainvalsplit":
+            loaded_model = TrainValidationSplitModel.load(path)
+    
+    #Jika tidak menggunakan ML-tuning, tipe model = PipelineModel    
+    elif conf["tuning"] == None:
+        loaded_model = PipelineModel.load(path)
+    
+    return loaded_model
 
 
-#Fungsi untuk melakukan prediksi dengan menggunakan trained model
+#menampilkan prediksi test data, jika menggunakan model regresi linear
 def predict(df, model):
-    """ input   : df [spark.dataframe], linear_regression model [model]
+    """ 
+        input   : df [spark.dataframe], linear_regression model [model]
         output  : prediction [dataframe]
     """    
     val = model.transform(df)
-    prediction = val.select("label","prediction")
-    return prediction
+    prediction = val.select("label", "prediction")
+    return prediction   
 
-
-#funsi untuk mendapat nilai R-square
-def summaryR2(df, col_prediction, col_label):
-    """ input : df [spark.dataframe]
+    
+#menunjukkan nilai R-square 
+def summaryR2(df, predictionCol, labelCol):
+    """ 
+        input : df [spark.dataframe]
         output : R squared on test data [float]
     """    
-    dt_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
-                 labelCol=col_label, metricName="r2")
-    r2 =  dt_evaluator.evaluate(df)
+    lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
+             labelCol=labelCol, metricName="r2")
+    r2 =  lr_evaluator.evaluate(df)
     r2 = [(Vectors.dense(r2),)]
     r2_df = spark.createDataFrame(r2, ["R-square"])
     return r2_df
 
 
-#fungsi untuk mendapat nilai RMS
-def summaryRMSE(df, col_prediction, col_label):
-    """ input : df [spark.dataframe]
+#menunjukkan nilai rms
+def summaryRMSE(df, predictionCol, labelCol):
+    """ 
+        input : df [spark.dataframe]
         output : RMS on test data [float]
     """    
-    lr_evaluator = RegressionEvaluator(predictionCol=col_prediction, 
-                 labelCol=col_label, metricName="rmse")
+    lr_evaluator = RegressionEvaluator(predictionCol=predictionCol, 
+             labelCol=labelCol, metricName="rmse")
     rmse =  lr_evaluator.evaluate(df)
     rmse = [(Vectors.dense(rmse),)]
     rmse_df = spark.createDataFrame(rmse, ["RMS"])
-    return rmse_df
+    return rmse_df   
 
-    
-#Showing selected row
-def row_slicing(df, n):
+     
+#memilih hasil pada baris tertentu (prediksi)
+def rowSlicing(df, n):
     num_of_data = df.count()
     ls = df.take(num_of_data)
     return ls[n]
 
 
+#menyalin model
+def copyModel(model):
+    copy_model = model.copy(extra=None)
+    return copy_model
 
-#--------------------------Test dan Contoh Penggunaan--------------------------#
 
+
+
+
+#-----------------------------------------------------------------------------------------------------------
+
+
+
+#load input data
 #Dataframe input
-df = spark.read.format("libsvm").load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")
+tree_df = spark.read.format("libsvm").load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt")
+
 
 # Automatically identify categorical features, and index them.
 # We specify maxCategories so features with > 4 distinct values are treated as continuous.
 featureIndexer =\
-        VectorIndexer(inputCol="features", outputCol="indexedFeatures", maxCategories=4).fit(df)
+        VectorIndexer(inputCol="features", outputCol="indexedFeatures", maxCategories=4).fit(tree_df)
 
-#Mencacah dataframe menjadi train dan test data dengan ratio 70% train data, 30% test data
-(train, test) = df.randomSplit([0.7, 0.3])
+training, test = tree_df.randomSplit([0.7, 0.3], seed = 11)
 
 
-#mendapatkan model menggunakan fungsi dtRegressor, dengan train data.
-model = dtRegressor(train, config)
 
-#mendapatkan dan menampilkan prediksi dari test data dengan menggunakan model yang sudah di-train
-testing = predict (test, model)
-testing.show(10)
+#CONTOH PENGGUNAAN FUNGSI
 
-#menampilkan R-square dari hasil prediksi
-r2 = summaryR2(testing, "prediction", "label")
-r2.show()
+#getting model
+model = dtRegression(training, conf1)
 
-#menampilkan RMS dari hasil prediksi
-rms = summaryRMSE(testing, "prediction", "label")
-rms.show()
+#getting prediction
+testing = predict(test, model)
+
+#getting R-square
+rsq = summaryR2(testing, "prediction", "label")  
+
+#getting RMS
+rms= summaryRMSE(testing, "prediction", "label")
