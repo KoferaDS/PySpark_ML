@@ -153,6 +153,69 @@ def generalizedLinearRegressor(dataFrame, conf):
 
     return model
 
+# show coefficient (if model is Generalized Linear Regression Model)
+def coeff(model):
+    """
+        input  : model [GeneralizedLinearRegressionModel]
+        output : dataframe [spark-dataFrame]
+    """
+    coefficients = model.coefficients
+    coeff  = []
+    for c in coefficients:
+        coeff.append((Vectors.dense(c),))
+    df_c = spark.createDataFrame(coeff, ["Coefficients"])
+    df_c.show()
+    return df_c
+
+# show intercept (if model is Generalized Linear Regression Model)
+def intercept(model):
+    """
+        input  : model (GeneralizedLinearRegressionModel)
+        output : df (spark-dataFrame)
+    """    
+    i = model.intercept
+    inter =  [(Vectors.dense(i),)]
+    i_df = spark.createDataFrame(inter, ["intercepts"])
+    i_df.show()
+    return i_df
+   
+# show summary from model = residual
+def summaryModel_residual(model):
+    """
+        input : trained model (GeneralizedLinearRegressionModel)
+        output: residual dataframe
+    """
+    modelsum = model.summary
+    residual = modelsum.residuals
+    print(residual)
+    return residual
+
+# return R-square value
+def summaryR2(dataFrame, predictionCol, labelCol):
+    """
+        input  : dataFrame [spark.dataFrame]
+        output : R squared on test data [float]
+    """
+    glr_evaluator = RegressionEvaluator(
+            predictionCol=predictionCol, labelCol=labelCol, metricName="r2")
+    r2 = glr_evaluator.evaluate(dataFrame)
+    r2 = [(Vectors.dense(r2),)]
+    r2_df = spark.createDataFrame(r2, ["R-square"])
+    return r2_df
+
+# return RMS value
+def summaryRMSE(dataFrame, predictionCol, labelCol):
+    """
+        input  : dataFrame [spark.dataFrame]
+        output : RMS on test data [float]
+    """
+    glr_evaluator = RegressionEvaluator(
+            predictionCol=predictionCol, labelCol=labelCol, metricName="rmse")
+    rmse = glr_evaluator.evaluate(dataFrame)
+    rmse = [(Vectors.dense(rmse),)]
+    rmse_df = spark.createDataFrame(rmse, ["RMS"])
+    return rmse_df
+
 # show validator metrics (if ML tuning is used)
 def validatorMetrics(model):
     """
@@ -199,37 +262,12 @@ def predict(dataFrame, model):
     """
         input  : dataFrame [spark.dataFrame], generalized linear regression
                  model [model]
-        output : prediction [data frame]
+        output : prediction [spark.dataFrame]
     """
     val = model.transform(dataFrame)
     prediction = val.select("label", "prediction")
     return prediction
 
-# return R-square value
-def summaryR2(dataFrame, predictionCol, labelCol):
-    """
-        input  : dataFrame [spark.dataFrame]
-        output : R squared on test data [float]
-    """
-    glr_evaluator = RegressionEvaluator(
-            predictionCol=predictionCol, labelCol=labelCol, metricName="r2")
-    r2 = glr_evaluator.evaluate(dataFrame)
-    r2 = [(Vectors.dense(r2),)]
-    r2_df = spark.createDataFrame(r2, ["R-square"])
-    return r2_df
-
-# return RMS value
-def summaryRMSE(dataFrame, predictionCol, labelCol):
-    """
-        input  : dataFrame [spark.dataFrame]
-        output : RMS on test data [float]
-    """
-    glr_evaluator = RegressionEvaluator(
-            predictionCol=predictionCol, labelCol=labelCol, metricName="rmse")
-    rmse = glr_evaluator.evaluate(dataFrame)
-    rmse = [(Vectors.dense(rmse),)]
-    rmse_df = spark.createDataFrame(rmse, ["RMS"])
-    return rmse_df
 
 # select value from certain row
 def rowSlicing(dataFrame, n):
