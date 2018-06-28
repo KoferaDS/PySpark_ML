@@ -146,20 +146,31 @@ def gbtModel(model):
 def validatorMetrics(model):
     """
        input : model (TrainValidationSplitModel)
-       output : validation metrics 
+       output : dataframe
     """
+    
     vm = model.validationMetrics
-    return vm
+    vmet  = []
+    for v in vm:
+        vmet.append((Vectors.dense(v),))
+    df_vm = spark.createDataFrame(vmet, ["Validation Metrics"])
+    df_vm.show()
+    return df_vm
 
 
 #Menampilkan average metrics dari CrossValidator Model
 def avgMetrics(model):
     """
        input    : CrossValidatorModel
-       output  : metrics
+       output  : dataframe
     """
     avm = model.avgMetrics
-    return avm 
+    avmet  = []
+    for av in avm:
+        avmet.append((Vectors.dense(av),))
+    df_avm = spark.createDataFrame(avmet, ["Validation Metrics"])
+    df_avm.show()
+    return df_avm 
 
 
 #Save Model
