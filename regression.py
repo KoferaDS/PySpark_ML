@@ -753,7 +753,105 @@ def summaryModel_quantile(model):
     """
     pq = model.predictQuantiles
     return pq
+
+#LinearRegression => fungsi untuk menampilkan koefisien (hanya dapat digunakan bila model = LinearRegressionModel)
+def coeff(model):
+    """
+        input  : model (LinearRegressionModel)
+        output : dataframe
+    """
+    coefficients = model.coefficients
+    coeff  = []
+    for c in coefficients:
+        coeff.append((Vectors.dense(c),))
+    df_c = spark.createDataFrame(coeff, ["Coefficients"])
+    df_c.show()
+    return df_c
     
+
+#LinearRegression => fungsi untuk menampilkan intercept (hanya daoat digunakan bila model = LinearRegressionModel)
+def intercept(model):
+    """
+        input  : model (LinearRegressionModel)
+        output : df (dataframe)
+    """    
+    i = model.intercept
+    inter =  [(Vectors.dense(i),)]
+    i_df = spark.createDataFrame(inter, ["intercepts"])
+    i_df.show()
+    return i_df
+
+   
+# LinearRegression => fungsi untuk menampilkan summary dari model = total iterasi
+def summaryModel_iter(model):
+    """
+        input : trained model (LinearRegressionModel)
+        output : dataframe
+    """
+    modelsum = model.summary
+    tot_iter = modelsum.totalIterations
+    total =  [(Vectors.dense(tot_iter),)]
+    iter_df = spark.createDataFrame(total, ["total iter"])
+    iter_df.show()
+    return iter_df
+
+   
+#LinearRegression => fungsi untuk menampilkan summary dari model = objective history
+def summaryModel_obj(model):
+    """
+        input : trained model (LinearRegressionModel)
+        output : dataframe
+    """
+    modelsum = model.summary
+    obj = modelsum.objectiveHistory
+    objective  = []
+    for ob in obj:
+        objective.append((Vectors.dense(ob),))
+    df_obj = spark.createDataFrame(objective, ["Objective History"])
+    df_obj.show()
+    return df_obj
+
+   
+#LinearRegression => fungsi untuk menampilkan summary dari model = residual   
+def summaryModel_residual(model):
+    """
+        input : trained model (LinearRegressionModel)
+        output: residual dataframe
+    """
+    modelsum = model.summary
+    residual = modelsum.residuals
+    residual.show()
+    return residual
+
+   
+#LinearRegression => fungsi untuk menampilkan summary dari model = RMSE 
+def summaryModel_RMSE(model):
+    """
+        input : training model (LinearRegressionModel)
+        output: dataframe
+    """
+    modelsum = model.summary    
+    rms = modelsum.rootMeanSquaredError
+    rmse = [(Vectors.dense(rms),)]
+    rmse_df = spark.createDataFrame(rmse, ["RMSE of Model"])
+    rmse_df.show()
+    return rmse_df
+
+   
+#LinearRegression => fungsi untuk menampilkan summary dari model = R2 
+def summaryModel_R2(model):
+    """
+        input : training model (LinearRegressionModel)
+        output: dataframe
+    """
+    modelsum = model.summary
+    r = modelsum.r2
+    rsq = [(Vectors.dense(r),)]
+    rsq_df = spark.createDataFrame(rsq, ["R-square of Model"])
+    rsq_df.show()
+    return rsq_df
+   
+   
 #memilih hasil pada baris tertentu (prediksi)
 def rowSlicing(df, n):
   """ dataFrame to slicedDataFrame"""
