@@ -11,6 +11,7 @@ from pyspark.ml import PipelineModel
 
 from pyspark.ml.regression import DecisionTreeRegressor, DecisionTreeModel
 
+from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.feature import VectorIndexer
 from pyspark.ml.tuning import (CrossValidator, TrainValidationSplit, ParamGridBuilder)
 from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
