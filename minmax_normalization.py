@@ -70,7 +70,7 @@ def saveMinMaxScalerModel(model, path):
 def loadMinMaxScaler(path):
     """
         input: path
-        output: scaler [MinMaxScaler]
+        return value: scaler [MinMaxScaler]
     """
     scaler = MinMaxScaler.load(path)
     return scaler   
@@ -79,7 +79,7 @@ def loadMinMaxScaler(path):
 def loadMinMaxScalerModel(path):
     """
         input: path
-        output: scaler [MinMaxScaler]
+        return value: scaler [MinMaxScaler]
     """
     scaler = MinMaxScalerModel.load(path)
     return scaler
@@ -89,7 +89,7 @@ def loadMinMaxScalerModel(path):
 def saveMinMaxData(data, path, dataType):
     """
         input: data [spark-dataframe], path, data type (string)
-        output: None
+        return value: None
     """
     if (dataType == 'csv'):
         data.toPandas().to_csv(path)
@@ -110,7 +110,7 @@ def saveMinMaxData(data, path, dataType):
 def loadMinMaxData(path):
     """
         input: path
-        output: df [data frame]
+        return value: df [data frame]
     """
     if (path.lower().find(".csv") != -1):
         df = spark.read.format("csv").load(path, header = True, inferSchema = "true")
@@ -123,6 +123,19 @@ def loadMinMaxData(path):
 
     return df
     
+#convert column(s) into vector dense
+def convertToVector(df, inCol, outCol):
+    """
+        input: df [spark-dataFrame], inCol [list], outCol [string]
+        return value: df [spark-dataFrame]
+    """
+    if (outCol == None):
+        outCol = "features"
+    assembler = VectorAssembler(
+        inputCols=inCol,
+        outputCol=outCol)
+    
+    return assembler.transform(df)
 
 
 #--------------------------Testing and Example--------------------------#
@@ -132,12 +145,8 @@ if __name__ == "__main__":
 
     #create data frame        
     df = loadMinMaxData("sample_minmax_norm.csv")
-        
-    assembler = VectorAssembler(
-        inputCols=["col1", "col2", "col3"],
-        outputCol="features")
     
-    dataFrame = assembler.transform(df)
+    dataFrame = convertToVector(df, ["col1", "col2", "col3"], "features")    
     
     #create min max normalization scaler and model
     scaler, model = minMaxScalerModel(dataFrame, config)

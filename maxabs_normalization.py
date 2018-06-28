@@ -98,7 +98,7 @@ def saveMaxAbsData(data, path, dataType):
 def loadMaxAbsData(path):
     """
         input: path
-        output: df [data frame]
+        return value: df [data frame]
     """
     if (path.lower().find(".csv") != -1):
         df = spark.read.format("csv").load(path, header = True, inferSchema = "true")
@@ -111,7 +111,19 @@ def loadMaxAbsData(path):
 
     return df
     
-
+#convert column(s) into vector dense
+def convertToVector(df, inCol, outCol):
+    """
+        input: df [spark-dataFrame], inCol [list], outCol [string]
+        return value: df [spark-dataFrame]
+    """
+    if (outCol == None):
+        outCol = "features"
+    assembler = VectorAssembler(
+        inputCols=inCol,
+        outputCol=outCol)
+    
+    return assembler.transform(df)
 
 
 
@@ -124,11 +136,7 @@ if __name__ == "__main__":
     df = loadMaxAbsData("sample_maxabs_norm.csv")
     
     #assembling columns to vector
-    assembler = VectorAssembler(
-        inputCols=["col1", "col2", "col3"],
-        outputCol="features")
-    
-    dataFrame = assembler.transform(df)
+    dataFrame = convertToVector(df, ["col1", "col2", "col3"], "features")
         
     #create max absolute normalization scaler and model
     scaler, model = maxAbsScalerModel(dataFrame, config)

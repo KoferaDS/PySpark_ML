@@ -104,7 +104,7 @@ def saveStandardData(data, path, dataType):
 def loadStandardData(path):
     """
         input: path
-        output: df [data frame]
+        return value: df [data frame]
     """
 #    if (path.lower().find(".txt") != -1):
 #        df = spark.read.format("libsvm").load(path, header = False, inferSchema = "true")
@@ -119,6 +119,20 @@ def loadStandardData(path):
 
     return df
 
+#convert column(s) into vector dense
+def convertToVector(df, inCol, outCol):
+    """
+        input: df [spark-dataFrame], inCol [list], outCol [string]
+        return value: df [spark-dataFrame]
+    """
+    if (outCol == None):
+        outCol = "features"
+    assembler = VectorAssembler(
+        inputCols=inCol,
+        outputCol=outCol)
+    
+    return assembler.transform(df)
+
     
 
 #--------------------------Testing and Example--------------------------#
@@ -129,11 +143,7 @@ if __name__ == "__main__":
     df = loadStandardData("standard_norm_sample.csv")
         
     #assembling columns to vector
-    assembler = VectorAssembler(
-        inputCols=["col1", "col2", "col3"],
-        outputCol="features")
-    
-    dataFrame = assembler.transform(df)
+    dataFrame = convertToVector(df, ["col1", "col2", "col3"], "features")
     
     #create standard normalization scaler and model
     scaler, model = standardScalerModel(dataFrame, config)
