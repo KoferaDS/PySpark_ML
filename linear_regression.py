@@ -5,6 +5,7 @@ from pyspark.sql.session import SparkSession
 from pyspark.ml.regression import LinearRegression
 from pyspark.ml.regression import LinearRegressionModel
 
+from pyspark.ml.feature import VectorAssembler
 from pyspark.ml.tuning import (CrossValidator, TrainValidationSplit, ParamGridBuilder)
 from pyspark.ml.tuning import (CrossValidatorModel, TrainValidationSplitModel)
 from pyspark.ml.evaluation import RegressionEvaluator
