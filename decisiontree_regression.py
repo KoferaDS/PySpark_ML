@@ -234,6 +234,7 @@ def summaryR2(df, predictionCol, labelCol):
     r2 =  lr_evaluator.evaluate(df)
     r2 = [(Vectors.dense(r2),)]
     r2_df = spark.createDataFrame(r2, ["R-square"])
+    r2_df.show()
     return r2_df
 
 
@@ -248,6 +249,7 @@ def summaryRMSE(df, predictionCol, labelCol):
     rmse =  lr_evaluator.evaluate(df)
     rmse = [(Vectors.dense(rmse),)]
     rmse_df = spark.createDataFrame(rmse, ["RMS"])
+    rmse_df.show()
     return rmse_df   
 
      
