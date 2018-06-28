@@ -30,7 +30,11 @@ spark = SparkSession(sc)
  
 
 #hyperparameter yang di-grid untuk diproses ke ML-tuning (jika ingin membuat model dengan hyperparameter tuning)
-grid = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
+grid_aft = { "maxIter" : [15,20,25], "aggregationDepth" : [3,4,5]}   
+grid_lr = { "maxIter" : [50, 100, 120], "regParam" : [0.1, 0.01]}
+grid_dt = { "maxDepth" : [3,4,5]}
+grid_rf = { "maxDepth" : [3,4,5], "numTrees" : [10,15,20]}
+grid_gbt = { "maxIter" : [15,20,25], "maxDepth" : [3,4,5]}
 
 
 #--> Setiap parameter yang di-inputkan ke dictionary tidak harus dituliskan, 
@@ -143,7 +147,10 @@ gbt_params = {
 # "methodParam" untuk trainval : pecahan antara [0-1]
 tune_params = { 
                  "method" : "crossval", 
-                 "paramGrids" : grid, 
+ 
+ # input paramGrid sesuai jenis ML yang digunakan 
+ # (AFTS = grid_aft, LR =grid_lr, ISO=None, DT=grid_dt, RF=grid_rf, GBT=grid_gbt)
+                 "paramGrids" : grid_lr, 
                  "methodParam" : 3  
                 }
 
