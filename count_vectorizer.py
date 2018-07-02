@@ -117,6 +117,8 @@ if __name__ == "__main__" :
        (1, "a b b c a".split(" "))
     ], ["id", "words"])
     
+    df.show()
+    
     conf = {
             "inputCol" : "words", 
             "outputCol" : "features", 

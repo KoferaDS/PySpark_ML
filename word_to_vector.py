@@ -142,7 +142,7 @@ def getSynonyms(word, sent, num, model) :
 
 def loadWord2VecData(path):
     '''
-    Load data frame
+    Load sentences
         Input : - path
         Output : - data frame
     '''
@@ -154,29 +154,26 @@ def loadWord2VecData(path):
     elif (path.lower().find(".json") != -1) :
         df = spark.read.json(path)
         sentences = df.take(1)[0].text
-    elif (path.lower().find(".parquet") != -1) :
-        df = spark.read.parquet(path)    
-        sentences = df.take(1)[0].text
     elif (path.lower().find(".txt") != -1) :
         df = spark.read.text(path)
         sentences = df.take(1)[0].value
     else :
         print("Unsupported yet ...")
 
-    return sentences
+    split_sent = (sentences).split(" ")
+    
+    for i in range (len(split_sent)) :
+        if split_sent[i][len(split_sent[i])-1] == '.' :
+            split_sent[i] = split_sent[i][:len(split_sent[i])-1]
+
+    return split_sent
             
 # ----------------Testing and Example--------------------#
     
 if __name__ == "__main__" :
         
-    df_txt = loadWord2VecData("D:/elephant.txt")
-    
-    load_text = (df_txt).split(" ")
-    
-    for i in range (len(load_text)) :
-        if load_text[i][len(load_text[i])-1] == '.' :
-            load_text[i] = load_text[i][:len(load_text[i])-1]
-             
+    load_text = loadWord2VecData("D:/elephant.txt")
+                 
     doc = spark.createDataFrame([(load_text,)], ["sentence"])
     
     doc.show()
@@ -193,10 +190,15 @@ if __name__ == "__main__" :
     model = train(doc, new_conf)
     model.getVectors().show()
     
-    if (foundWord("elephant", load_text)) :
-        getSynonyms("elephant", load_text, 2, model)
+    transformData(doc, model).show()
+    
+    word = "elephant"
+    
+    print(foundWord(word, load_text))
+    if (foundWord(word, load_text)) :
+        getSynonyms(word, load_text, 2, model)
     else :
-        print(getSynonyms("elephant", load_text, 2, model))
+        print(getSynonyms(word, load_text, 2, model))
         
     spark.stop()
     

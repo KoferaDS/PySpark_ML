@@ -50,12 +50,44 @@ def transformData(df, param) :
     
     transform_df = hashingTF.transform(df)
     return transform_df
+
+def loadHashingTFData(path):
+    '''
+    Load list of words
+        Input : - path
+        Output : - data frame
+    '''
+    
+    if (path.lower().find(".csv") != -1) :
+        df = spark.read.load(path,
+                     format="csv", sep=":", inferSchema="true", header="true")
+        sentences = df.take(1)[0].text
+    elif (path.lower().find(".json") != -1) :
+        df = spark.read.json(path)
+        sentences = df.take(1)[0].text
+    elif (path.lower().find(".txt") != -1) :
+        df = spark.read.text(path)
+        sentences = df.take(1)[0].value
+    else :
+        print("Unsupported yet ...")
+        
+    split_sent = (sentences).split(" ")
+    
+    for i in range (len(split_sent)) :
+        if split_sent[i][len(split_sent[i])-1] == '.' :
+            split_sent[i] = split_sent[i][:len(split_sent[i])-1]
+
+    return split_sent
             
 # ----------------Testing and Example--------------------#
 
 if __name__ == "__main__" :
     
-    df = spark.createDataFrame([(["a", "b", "c"],)], ["words"])
+    data = loadHashingTFData("D:/elephant.txt")
+    
+    print(data)
+    
+    df = spark.createDataFrame([(data,)], ["words"])
     
     conf = {
             "numFeatures" : 100, 
@@ -74,6 +106,7 @@ if __name__ == "__main__" :
     print(transform_df.words)
     print(transform_df.features)
     
+    '''
     df2 = spark.createDataFrame([(["a", "c", "c", "e", "e"],)], ["words"])
     
     conf2 = {
@@ -89,5 +122,6 @@ if __name__ == "__main__" :
     print(transform_df2)
     print(transform_df2.words)
     print(transform_df2.features)
+    '''
     
     spark.stop()

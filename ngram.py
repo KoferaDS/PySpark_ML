@@ -42,23 +42,57 @@ def transformData(df, parameter) :
         Input : - parameter
         Output : - transformed dataframe
     '''
+    
     ngram = NGram(n= parameter["n"], 
                   inputCol = parameter["inputCol"],
                   outputCol = parameter["outputCol"])
     
     temp = ''
-    if len(row.inputTokens) < ngram.getN() :
-        temp = 'No element in ' + parameter["outputCol"]
+    
+    if len(ngram.transform(df).head().inputTokens) < ngram.getN() :
+        print('No element in ' + parameter["outputCol"])
     else :
-        temp  = ngram.transform(df)
+        temp  = ngram.transform(df).show()
     
     return temp
+
+def loadNGramData(path):
+    '''
+    Load list of words
+        Input : - path
+        Output : - list of words
+    '''
+    
+    if (path.lower().find(".csv") != -1) :
+        df = spark.read.load(path,
+                     format="csv", sep=":", inferSchema="true", header="true")
+        sentences = df.take(1)[0].text
+    elif (path.lower().find(".json") != -1) :
+        df = spark.read.json(path)
+        sentences = df.take(1)[0].text
+    elif (path.lower().find(".txt") != -1) :
+        df = spark.read.text(path)
+        sentences = df.take(1)[0].value
+    else :
+        print("Unsupported yet ...")
+        
+    split_sent = (sentences).split(" ")
+    
+    for i in range (len(split_sent)) :
+        if split_sent[i][len(split_sent[i])-1] == '.' :
+            split_sent[i] = split_sent[i][:len(split_sent[i])-1]
+
+    return split_sent
 
 # ----------------Testing and Example--------------------#
     
 if __name__ == "__main__" :
     
-    row = Row(inputTokens=["a", "b", "c", "d", "e"])
+    load_text = loadNGramData("D:/elephant.txt")
+    
+    print(load_text)
+            
+    row = Row(inputTokens=load_text)
     df = spark.createDataFrame([row])
     
     conf = {
@@ -70,13 +104,12 @@ if __name__ == "__main__" :
     new_conf = adaptParameter(conf)
 
     transform_df = transformData(df, new_conf)
-    print(transform_df.show())
     
     row2 = Row(inputTokens=["a", "a", "c", "c", "e", "e"])
     df2 = spark.createDataFrame([row2])
     
     conf2 = {
-            "n" : 10, 
+            "n" : 3, 
             "inputCol" : "inputTokens", 
             "outputCol" : "nGrams"
             }
@@ -84,6 +117,5 @@ if __name__ == "__main__" :
     new_conf2 = adaptParameter(conf2)
     
     transform_df2 = transformData(df2, new_conf2)
-    print(transform_df2)
 
     spark.stop()
