@@ -3,153 +3,153 @@
 
  { afts_params = 
   {
-  "name" : "AFTSurvivalRegression"
-  "params" :[{
+   "name" : "AFTSurvivalRegression"
+   "params" :[{
                "name" : "predictionCol"
-               "type" : "str"
-	       "default value": "prediction" 
+               "type" : str
+	       "default": "prediction" 
              },
              {
                "name" : "labelCol"
-               "type" : "str"
-	       "default value": "label"
+               "type" : str
+	       "default": "label"
              },
              { 
                "name" : "featuresCol"
-               "type" : "str"
-	       "default value": "features"
+               "type" : str
+	       "default": "features"
              },
              { 
                "name" : "censorCol"
-               "type" : "str"
-	       "default value": "censor"
+               "type" : str
+	       "default": "censor"
              },
              { 
                "name" : "quantilesCol"
-               "type" : "str"
-	       "default value": None
+               "type" : str
+	       "default": None
              },
              { 
-               "name" : "fit"int"ercept"
-               "type" : "boolean"
-	       "default value": True
+               "name" : "fitintercept"
+               "type" : bool
+	       "default": True
              },
              { 
                "name" : "maxIter"
-               "type" : "int"
-	       "default value": 100
+               "type" : int
+	       "default": 100
              },
              { 
                "name" : "tol"
                "type" : -
-	       "default value": 1E-6
+	       "default": 1E-6
              },	
              {
                "name" : "quantileProbabilities"
-               "type" : "list"
-	       "default value": [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
+               "type" : list
+	       "default": [0.01, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.99]
              },
              {
                "name" : "aggregationDepth"
-               "type" : "int"
-	       "default value": 2
+               "type" : int
+	       "default": 2
              }
-	    ]
+			]
   }
  }
  { linear_params =
   {
-  "name" : "LinearRegression"
-  "params" : [{
+   "name" : "LinearRegression"
+   "params" : [{
                 "name" : "maxIter"
-                "type" : "int"
-	        "default value": 5
+                "type" : int
+	        "default": 5
               },
               {
                 "name" : "regParam"
-                "type" : "float"
-	        "default value": 0.01
+                "type" : float
+	        "default": 0.01
               },  
               {
                 "name" : "elasticNetParam"
-                "type" : "float"
-	        "default value": 1.0
+                "type" : float
+	        "default": 1.0
               },
               {
                 "name" : "tol"
                 "type" : -
-	        "default value": 1e-06
+	        "default": 1e-06
               },
               {
-                "name" : "fit"int"ercept"
-                "type" : "boolean"
-	        "default value": True
+                "name" : "fitintercept"
+                "type" : bool
+	        "default": True
               },
               {
                 "name" : "standardization"
-                "type" : "boolean"
-	        "default value": True
+                "type" : bool
+	        "default": True
               },
               {
                 "name" : "solver"
                 "type" : -
-	        "default value": "auto"
+	        "default": "auto"
               }, 
               {
                 "name" : "weightCol"
-                "type" : "str"
-	        "default value": "weight"
+                "type" : str
+	        "default": "weight"
               }, 
               {
                 "name" : "aggregationDepth"
-                "type" : "int"
-	        "default value": 2
+                "type" : int
+	        "default": 2
               },
               {
                 "name" : "loss"
                 "type" : -
-	        "default value": "squaredError"
+	        "default": "squaredError"
               }, 
               {
                 "name" : "epsilon"
-                "type" : "float"
-	        "default value": 1.35
+                "type" : float
+	        "default": 1.35
               }
-             ]
+			 ]
   }
  }
  { isotonic_params =
   {
-  "name" : "IsotonicRegression"
-  "params" : [{
+   "name" : "IsotonicRegression"
+   "params" : [{
                 "name" : "predictionCol"
-                "type" : "str"
-	        "default value": "prediction"
+                "type" : str
+	        "default": "prediction"
               },
               {
                 "name" : "labelCol"
-                "type" : "str"
-	        "default value": "label"
+                "type" : str
+	        "default": "label"
               },  
               {
                 "name" : "featuresCol"
-                "type" : "str"
-	        "default value": "features"
+                "type" : str
+	        "default": "features"
               },
               {
                 "name" : "weightCol"
-                "type" : "str"
-	        "default value": "weight"
+                "type" : str
+	        "default": "weight"
               },
               {
                 "name" : "isotonic"
-                "type" : "boolean"
-	        "default value": True
+                "type" : bool
+	        "default": True
               },
               {
                 "name" : "featureIndex"
-                "type" : "int"
-	        "default value": 0
+                "type" : int
+	        "default": 0
               }
 	     ]
   }
@@ -159,68 +159,68 @@
    "name" : "DecisiontreeRegression"
    "params" : [{
                  "name" : "maxDepth"
-                 "type" : "int"
-	         "default value": 3
+                 "type" : int
+	         "default": 3
                },
                {
                  "name" : "featuresCol"
-                 "type" : "str"
-	         "default value": "features"
+                 "type" : str
+	         "default": "features"
                },  
                {
                  "name" : "labelCol"
-                 "type" : "str"
-	         "default value": "label"
+                 "type" : str
+	         "default": "label"
                },
                {
                  "name" : "predictionCol"
-                 "type" : "str"
-	         "default value": "prediction"
+                 "type" : str
+	         "default": "prediction"
                },
                {
                  "name" : "maxBins"
-                 "type" : "int"
-	         "default value": 32
+                 "type" : int
+	         "default": 32
                },
                {
                  "name" : "minInstancesPerNode"
-                 "type" : "int"
-	         "default value": 1
+                 "type" : int
+	         "default": 1
                },
                {
                  "name" : "minInfoGain"
-                 "type" : "float"
-	         "default value": 0.0
+                 "type" : float
+	         "default": 0.0
                }, 
                {
                  "name" : "maxMemoryInMB"
-                 "type" : "int"
-	         "default value": 256
+                 "type" : int
+	         "default": 256
                }, 
                {
                  "name" : "cacheModeIds"
-                 "type" : "boolean"
-	         "default value": False
+                 "type" : bool
+	         "default": False
                }, 
                {
-                 "name" : "checkpo"int""int"erval"
-                 "type" : "int"
-	         "default value": 10
+                 "name" : "checkpointinterval"
+                 "type" : int
+	         "default": 10
                },
                {
                  "name" : "impurity"
                  "type" : -
-	         "default value": "variance"
+	         "default": "variance"
                }, 
                {
                  "name" : "seed"
-                 "type" : "int"
-	         "default value": None
+                 "type" : int
+	         "default": None
                },
                {
                  "name" : "varianceCol"
-                 "type" : "str"
-	         "default value": None
+                 "type" : str
+	         "default": None
                }
 	      ]
   }
@@ -230,80 +230,80 @@
    "name" : "RandomforestRegression"
    "params" : [{
                  "name" : "featuresCol"
-                 "type" : "str"
-	         "default value": "features"
+                 "type" : str
+	         "default": "features"
                },  
                {
                  "name" : "labelCol"
-                 "type" : "str"
-	         "default value": "label"
+                 "type" : str
+	         "default": "label"
                },
                {
                  "name" : "predictionCol"
-                 "type" : "str"
-	         "default value": "prediction"
+                 "type" : str
+	         "default": "prediction"
                },
                {
                  "name" : "maxDepth"
-                 "type" : "int"
-	         "default value": 5
+                 "type" : int
+	         "default": 5
                },
                {
                  "name" : "maxBins"
-                 "type" : "int"
-	         "default value": 32
+                 "type" : int
+	         "default": 32
                },
                {
                  "name" : "minInstancesPerNode"
-                 "type" : "int"
-	         "default value": 1
+                 "type" : int
+	         "default": 1
                },
                {
                  "name" : "minInfoGain"
-                 "type" : "float"
-	         "default value": 0.0
+                 "type" : float
+	         "default": 0.0
                }, 
                {
                  "name" : "maxMemoryInMB"
-                 "type" : "int"
-	         "default value": 256
+                 "type" : int
+	         "default": 256
                }, 
                {
                  "name" : "cacheNodeIds"
-                 "type" : "boolean"
-	         "default value": False
+                 "type" : bool
+	         "default": False
                }, 
                {
-                 "name" : "checkpo"int""int"erval"
-                 "type" : "int"
-	         "default value": 10
+                 "name" : "checkpointinterval"
+                 "type" : int
+	         "default": 10
                },
                {
                  "name" : "impurity"
                  "type" : -
-	         "default value": "variance"
+	             "default": "variance"
                }, 
                {
                  "name" : "subsamplingRate"
-                 "type" : "float"
-	         "default value": 1.0
+                 "type" : float
+	         "default": 1.0
                },
                {
                  "name" : "seed"
-                 "type" : "int"
-	         "default value": None
+                 "type" : int
+	         "default": None
                },
                {
                  "name" : "numTrees"
-                 "type" : "int"
-	         "default value": 20
+                 "type" : int
+	         "default": 20
                },
                {
                  "name" : "featureSubsetStrategy"
                  "type" : -
-	         "default value": "auto"
+	         "default": "auto"
                }
-              ]
+	      ]
   }
  }
  { gbt_params =
@@ -311,85 +311,85 @@
    "name" : GradientboostedtreesRegression" 
    "params" :[{
                 "name" : "maxIter"
-                "type" : "int"
-	        "default value": 20
+                "type" : int
+	        "default": 20
               },  
               {
                 "name" : "maxDepth"
-                "type" : "int"
-	        "default value": 3
+                "type" : int
+	        "default": 3
               },
               {
                 "name" : "featuresCol"
-                "type" : "str"
-	        "default value": "features"
+                "type" : str
+	        "default": "features"
               },
               {
                 "name" : "labelCol"
-                "type" : "str"
-	        "default value": "label"
+                "type" : str
+	        "default": "label"
               },
               {
                 "name" : "predictionCol"
-                "type" : "str"
-	        "default value": "prediction"
+                "type" : str
+	        "default": "prediction"
               },
               {
                 "name" : "maxBins"
-                "type" : "int"
-	        "default value": 32
+                "type" : int
+	        "default": 32
               },
               {
                 "name" : "minInstancesPerNode"
-                "type" : "int"
-	        "default value": 1
+                "type" : int
+	        "default": 1
               },
               {
                 "name" : "minInfoGain"
-                "type" : "float"
-	        "default value": 0.0
+                "type" : float
+	        "default": 0.0
               }, 
               {
                 "name" : "maxMemoryInMB"
-                "type" : "int"
-	        "default value": 256
+                "type" : int
+	        "default": 256
               }, 
               {
                 "name" : "cacheNodeIds"
-                "type" : "boolean"
-	        "default value": False
+                "type" : bool
+	        "default": False
               }, 
               {
                 "name" : "subsamplingRate"
-                "type" : "float"
-	        "default value": 1.0
+                "type" : float
+	        "default": 1.0
               },
               {
-                "name" : "checkpo"int""int"erval"
-                "type" : "int"
-	        "default value": 10
+                "name" : "checkpointinterval"
+                "type" : int
+	        "default": 10
               },
               {
                 "name" : "lossType"
                 "type" : -
-	        "default value": "squared"
+	        "default": "squared"
               },
               {
                 "name" : "stepSize"
-                "type" : "float"
-	            "default value": 0.1
+                "type" : float
+	        "default": 0.1
               },
               {
                 "name" : "seed"
-                "type" : "int"
-	            "default value": None
+                "type" : int
+	        "default": None
               },
               {
                 "name" : "impurity"
                 "type" : -
-	            "default value": "variance"
+	        "default": "variance"
               } 
-             ]
+	     ]
   }
  }
 ]
