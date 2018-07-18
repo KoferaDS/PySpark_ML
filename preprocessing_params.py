@@ -6,22 +6,22 @@
   "params" :[{
                "name" : "min"
                "type" : float
-	           "default": 0.0  
+	       "default": 0.0  
              },
              {
                "name" : "max"
                "type" : float
-	           "default": 1.0
+	       "default": 1.0
              },
              { 
                "name" : "inputCol"
                "type" : str
-	           "default": "features"
+	       "default": "features"
              },
              { 
                "name" : "outputCol"
                "type" : str
-	           "default": "scaledFeatures"
+	       "default": "scaledFeatures"
              }
 			]
   }
@@ -32,14 +32,14 @@
   "params" : [{
                 "name" : "inputCol"
                 "type" : str
-	            "default": "features"
+	        "default": "features"
               },
               {
                 "name" : "outputCol"
                 "type" : str
-	            "default": "scaledFeatures"
+	        "default": "scaledFeatures"
               } 
- 			 ]
+ 	     ]
   }
  }
  { normalizer_params =
@@ -48,19 +48,19 @@
   "params" : [{
                 "name" : "p"
                 "type" : float
-	            "default": 2.0
+	        "default": 2.0
               },
               {
                 "name" : "inputCol"
                 "type" : str
-	            "default": None
+	        "default": None
               },
               {
                 "name" : "outputCol"
                 "type" : str
-	            "default": None
+	        "default": None
               } 
- 			 ]
+ 	     ]
   }
  }
  { standardscaler_params =
@@ -69,24 +69,24 @@
   "params" : [{
                 "name" : "withMean"
                 "type" : bool
-	            "default": False
+	        "default": False
               },
               {
                 "name" : "withStd"
                 "type" : bool
-	            "default": True
+	        "default": True
               },  
               {
                 "name" : "inputCol"
                 "type" : str
-	            "default": "features"
+	        "default": "features"
               },
               {
                 "name" : "outputCol"
                 "type" : str
-	            "default": "scaledFeatures"
+	        "default": "scaledFeatures"
               }
-			 ]
+	     ]
   }
  }
  { indextostring_params =
@@ -107,7 +107,7 @@
                 "type" : str
 	            "default": None
               }
-			 ]
+	     ]
   }
  }
  { stringindexer_params =
@@ -116,19 +116,19 @@
   "params" : [{
                 "name" : "inputCol"
                 "type" : str
-	            "default": None
+	        "default": None
               },
               {
                 "name" : "outputCol"
                 "type" : str
-	            "default": None
+	        "default": None
               }
 			                {
                 "name" : "handledInvalid
                 "type" : str
-	            "default": "error"
+	        "default": "error"
               }
-			 ]
+	     ]
   }
  } 
  { PCA_params =
@@ -137,19 +137,19 @@
    "params" : [{
                  "name" : "k"
                  "type" : int
-	             "default": None
+	         "default": None
                },
                {
                  "name" : "inputCol"
                  "type" : str
-	             "default": None
+	         "default": None
                },  
                {
                  "name" : "outputCol"
                  "type" : str
-	             "default": None
+	         "default": None
                }
-			  ]
+	      ]
   }
  }
 ]
