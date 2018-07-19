@@ -124,7 +124,7 @@
 	        "default": None
               }
 			                {
-                "name" : "handledInvalid
+                "name" : "handledInvalid"
                 "type" : str
 	        "default": "error"
               }
