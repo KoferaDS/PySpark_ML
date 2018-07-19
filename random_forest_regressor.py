@@ -194,7 +194,7 @@ def copyModel(model):
 
 #     Loads dataframe
 df_rfr = spark.read.format("libsvm")\
-            .load("C:/Users/Lenovo/spark-master/data/mllib/sample_libsvm_data.txt") 
+            .load("D:/spark/data/mllib/sample_libsvm_data.txt") 
             
 #    Assemble dataframe features into one column
 #    Set list of column name from the dataframe
