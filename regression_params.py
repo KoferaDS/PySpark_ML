@@ -6,37 +6,37 @@
    "name" : "AFTSurvivalRegression"
    "params" :[{
                "name" : "predictionCol"
-               "type" : str
+               "type" : "str"
 	       "default": "prediction" 
              },
              {
                "name" : "labelCol"
-               "type" : str
+               "type" : "str"
 	       "default": "label"
              },
              { 
                "name" : "featuresCol"
-               "type" : str
+               "type" : "str"
 	       "default": "features"
              },
              { 
                "name" : "censorCol"
-               "type" : str
+               "type" : "str"
 	       "default": "censor"
              },
              { 
                "name" : "quantilesCol"
-               "type" : str
+               "type" : "str"
 	       "default": None
              },
              { 
-               "name" : "fitintercept"
-               "type" : bool
+               "name" : "fitIntercept"
+               "type" : "bool"
 	       "default": True
              },
              { 
                "name" : "maxIter"
-               "type" : int
+               "type" : "int"
 	       "default": 100
              },
              { 
@@ -51,7 +51,7 @@
              },
              {
                "name" : "aggregationDepth"
-               "type" : int
+               "type" : "int"
 	       "default": 2
              }
 			]
@@ -62,17 +62,17 @@
    "name" : "LinearRegression"
    "params" : [{
                 "name" : "maxIter"
-                "type" : int
+                "type" : "int"
 	        "default": 5
               },
               {
                 "name" : "regParam"
-                "type" : float
+                "type" : "float"
 	        "default": 0.01
               },  
               {
                 "name" : "elasticNetParam"
-                "type" : float
+                "type" : "float"
 	        "default": 1.0
               },
               {
@@ -81,13 +81,13 @@
 	        "default": 1e-06
               },
               {
-                "name" : "fitintercept"
-                "type" : bool
+                "name" : "fitIntercept"
+                "type" : "bool"
 	        "default": True
               },
               {
                 "name" : "standardization"
-                "type" : bool
+                "type" : "bool"
 	        "default": True
               },
               {
@@ -97,12 +97,12 @@
               }, 
               {
                 "name" : "weightCol"
-                "type" : str
+                "type" : "str"
 	        "default": "weight"
               }, 
               {
                 "name" : "aggregationDepth"
-                "type" : int
+                "type" : "int"
 	        "default": 2
               },
               {
@@ -112,7 +112,7 @@
               }, 
               {
                 "name" : "epsilon"
-                "type" : float
+                "type" : "float"
 	        "default": 1.35
               }
 			 ]
@@ -123,32 +123,32 @@
    "name" : "IsotonicRegression"
    "params" : [{
                 "name" : "predictionCol"
-                "type" : str
+                "type" : "str"
 	        "default": "prediction"
               },
               {
                 "name" : "labelCol"
-                "type" : str
+                "type" : "str"
 	        "default": "label"
               },  
               {
                 "name" : "featuresCol"
-                "type" : str
+                "type" : "str"
 	        "default": "features"
               },
               {
                 "name" : "weightCol"
-                "type" : str
+                "type" : "str"
 	        "default": "weight"
               },
               {
                 "name" : "isotonic"
-                "type" : bool
+                "type" : "bool"
 	        "default": True
               },
               {
                 "name" : "featureIndex"
-                "type" : int
+                "type" : "int"
 	        "default": 0
               }
 	     ]
@@ -159,67 +159,67 @@
    "name" : "DecisiontreeRegression"
    "params" : [{
                  "name" : "maxDepth"
-                 "type" : int
+                 "type" : "int"
 	         "default": 3
                },
                {
                  "name" : "featuresCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": "features"
                },  
                {
                  "name" : "labelCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": "label"
                },
                {
                  "name" : "predictionCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": "prediction"
                },
                {
                  "name" : "maxBins"
-                 "type" : int
+                 "type" : "int"
 	         "default": 32
                },
                {
                  "name" : "minInstancesPerNode"
-                 "type" : int
+                 "type" : "int"
 	         "default": 1
                },
                {
                  "name" : "minInfoGain"
-                 "type" : float
+                 "type" : "float"
 	         "default": 0.0
                }, 
                {
                  "name" : "maxMemoryInMB"
-                 "type" : int
+                 "type" : "int"
 	         "default": 256
                }, 
                {
                  "name" : "cacheModeIds"
-                 "type" : bool
+                 "type" : "bool"
 	         "default": False
                }, 
                {
-                 "name" : "checkpointinterval"
-                 "type" : int
+                 "name" : "checkpo"int""int"erval"
+                 "type" : "int"
 	         "default": 10
                },
                {
                  "name" : "impurity"
-                 "type" : -
+                 "type" : "str"
 	         "default": "variance"
                }, 
                {
                  "name" : "seed"
-                 "type" : int
+                 "type" : "int"
 	         "default": None
                },
                {
                  "name" : "varianceCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": None
                }
 	      ]
@@ -227,80 +227,80 @@
  }
  { rfr_params =
   {
-   "name" : "RandomforestRegression"
+   "name" : "Randomfore"str"egression"
    "params" : [{
                  "name" : "featuresCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": "features"
                },  
                {
                  "name" : "labelCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": "label"
                },
                {
                  "name" : "predictionCol"
-                 "type" : str
+                 "type" : "str"
 	         "default": "prediction"
                },
                {
                  "name" : "maxDepth"
-                 "type" : int
+                 "type" : "int"
 	         "default": 5
                },
                {
                  "name" : "maxBins"
-                 "type" : int
+                 "type" : "int"
 	         "default": 32
                },
                {
                  "name" : "minInstancesPerNode"
-                 "type" : int
+                 "type" : "int"
 	         "default": 1
                },
                {
                  "name" : "minInfoGain"
-                 "type" : float
+                 "type" : "float"
 	         "default": 0.0
                }, 
                {
                  "name" : "maxMemoryInMB"
-                 "type" : int
+                 "type" : "int"
 	         "default": 256
                }, 
                {
                  "name" : "cacheNodeIds"
-                 "type" : bool
+                 "type" : "bool"
 	         "default": False
                }, 
                {
-                 "name" : "checkpointinterval"
-                 "type" : int
+                 "name" : "checkpoInterval"
+                 "type" : "int"
 	         "default": 10
                },
                {
                  "name" : "impurity"
-                 "type" : -
-	             "default": "variance"
+                 "type" : "str"
+	         "default": "variance"
                }, 
                {
                  "name" : "subsamplingRate"
-                 "type" : float
+                 "type" : "float"
 	         "default": 1.0
                },
                {
                  "name" : "seed"
-                 "type" : int
+                 "type" : "int"
 	         "default": None
                },
                {
                  "name" : "numTrees"
-                 "type" : int
+                 "type" : "int"
 	         "default": 20
                },
                {
-                 "name" : "featureSubsetStrategy"
-                 "type" : -
+                 "name" : "featureSubsetstrategy"
+                 "type" : "str"
 	         "default": "auto"
                }
 	      ]
@@ -311,82 +311,82 @@
    "name" : GradientboostedtreesRegression" 
    "params" :[{
                 "name" : "maxIter"
-                "type" : int
+                "type" : "int"
 	        "default": 20
               },  
               {
                 "name" : "maxDepth"
-                "type" : int
+                "type" : "int"
 	        "default": 3
               },
               {
                 "name" : "featuresCol"
-                "type" : str
+                "type" : "str"
 	        "default": "features"
               },
               {
                 "name" : "labelCol"
-                "type" : str
+                "type" : "str"
 	        "default": "label"
               },
               {
                 "name" : "predictionCol"
-                "type" : str
+                "type" : "str"
 	        "default": "prediction"
               },
               {
                 "name" : "maxBins"
-                "type" : int
+                "type" : "int"
 	        "default": 32
               },
               {
                 "name" : "minInstancesPerNode"
-                "type" : int
+                "type" : "int"
 	        "default": 1
               },
               {
                 "name" : "minInfoGain"
-                "type" : float
+                "type" : "float"
 	        "default": 0.0
               }, 
               {
                 "name" : "maxMemoryInMB"
-                "type" : int
+                "type" : "int"
 	        "default": 256
               }, 
               {
                 "name" : "cacheNodeIds"
-                "type" : bool
+                "type" : "bool"
 	        "default": False
               }, 
               {
                 "name" : "subsamplingRate"
-                "type" : float
+                "type" : "float"
 	        "default": 1.0
               },
               {
-                "name" : "checkpointinterval"
-                "type" : int
+                "name" : "checkpoInterval"
+                "type" : "int"
 	        "default": 10
               },
               {
                 "name" : "lossType"
-                "type" : -
+                "type" : "str"
 	        "default": "squared"
               },
               {
                 "name" : "stepSize"
-                "type" : float
+                "type" : "float"
 	        "default": 0.1
               },
               {
                 "name" : "seed"
-                "type" : int
+                "type" : "int"
 	        "default": None
               },
               {
                 "name" : "impurity"
-                "type" : -
+                "type" : "str"
 	        "default": "variance"
               } 
 	     ]
